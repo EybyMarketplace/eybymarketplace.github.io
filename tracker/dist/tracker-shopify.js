@@ -1,8 +1,8 @@
 /*!
  * Influencer Tracker - SHOPIFY Build
  * Version: 2.0.0
- * Built: 2025-07-23T17:53:31.595Z
- * Files: src/core/tracker-core.js, src/adapters/shopify-adapter.js
+ * Built: 2025-07-23T18:13:59.021Z
+ * Files: src/core/tracker-core.js, src/adapters/shopify-adapter.js, src/utils/helpers.js
  * 
  * Copyright (c) 2025
  * Licensed under MIT
@@ -15,8 +15,8 @@
   const BUILD_INFO = {
     name: 'shopify',
     version: '2.0.0',
-    timestamp: '2025-07-23T17:53:31.596Z',
-    files: ["src/core/tracker-core.js","src/adapters/shopify-adapter.js"]
+    timestamp: '2025-07-23T18:13:59.023Z',
+    files: ["src/core/tracker-core.js","src/adapters/shopify-adapter.js","src/utils/helpers.js"]
   };
   
   // Expose build info
@@ -32,416 +32,395 @@
  */
 
 (function(window, document) {
-  'use strict';
-  
-  // ========== CONFIGURAÇÕES ==========
-  const CONFIG = {
-    apiEndpoint: '',
-    projectId: '',
-    enableConsentCheck: true,
-    batchSize: 10,
-    batchTimeout: 3000,
-    sessionTimeout: 30 * 60 * 1000, // 30 minutos
-    version: '2.0.0'
-  };
+    'use strict';
 
-  // ========== GERENCIAMENTO DE CONSENT (LGPD) ==========
-  const ConsentManager = {
-    checkConsent: function() {
-      if (!CONFIG.enableConsentCheck) return true;
-      
-      const consent = localStorage.getItem('analytics_consent');
-      return consent === 'granted';
-    },
-    
-    waitForConsent: function(callback) {
-      const checkInterval = setInterval(() => {
-        if (this.checkConsent()) {
-          clearInterval(checkInterval);
-          callback();
-        }
-      }, 500);
-      
-      // Timeout após 10 segundos
-      setTimeout(() => {
-        clearInterval(checkInterval);
-      }, 10000);
-    }
-  };
+    // ========== CONFIGURAÇÕES ==========
+    const CONFIG = {
+        apiEndpoint: '',
+        projectId: '',
+        enableConsentCheck: true,
+        batchSize: 10,
+        batchTimeout: 3000,
+        sessionTimeout: 30 * 60 * 1000, // 30 minutos
+        version: '2.0.0'
+    };
 
-  // ========== GERAÇÃO DE IDs ÚNICOS ==========
-  const IdGenerator = {
-    generateUUID: function() {
-      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        const r = Math.random() * 16 | 0;
-        const v = c == 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-      });
-    },
-    
-    getUserId: function() {
-      let userId = localStorage.getItem('inf_user_id');
-      if (!userId) {
-        userId = this.generateUUID();
-        localStorage.setItem('inf_user_id', userId);
-      }
-      return userId;
-    },
-    
-    getSessionId: function() {
-      let sessionData = sessionStorage.getItem('inf_session');
-      
-      if (sessionData) {
-        const session = JSON.parse(sessionData);
-        const now = Date.now();
+    // ========== GERENCIAMENTO DE CONSENT (LGPD) ==========
+    const ConsentManager = {
+        checkConsent: function() {
+        if (!CONFIG.enableConsentCheck) return true;
         
-        // Verifica se a sessão não expirou
-        if (now - session.lastActivity < CONFIG.sessionTimeout) {
-          session.lastActivity = now;
-          sessionStorage.setItem('inf_session', JSON.stringify(session));
-          return session.id;
-        }
-      }
-      
-      // Cria nova sessão
-      const newSession = {
-        id: this.generateUUID(),
-        startTime: Date.now(),
-        lastActivity: Date.now()
-      };
-      
-      sessionStorage.setItem('inf_session', JSON.stringify(newSession));
-      return newSession.id;
-    }
-  };
-
-  // ========== DETECÇÃO DE INFLUENCIADOR ==========
-  const InfluencerDetector = {
-    detectInfluencer: function() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      
-      // Verifica parâmetros de influenciador na URL
-      const influencerParams = {
-        influencer_id: urlParams.get('inf_id') || urlParams.get('influencer') || hashParams.get('inf_id'),
-        campaign_id: urlParams.get('camp_id') || urlParams.get('campaign') || hashParams.get('camp_id'),
-        promo_code: urlParams.get('promo') || urlParams.get('codigo') || hashParams.get('promo'),
-        utm_source: urlParams.get('utm_source'),
-        utm_medium: urlParams.get('utm_medium'),
-        utm_campaign: urlParams.get('utm_campaign'),
-        ref: urlParams.get('ref')
-      };
-      
-      // Detecta origem de redes sociais
-      const referrer = document.referrer;
-      let socialSource = null;
-      
-      if (referrer.includes('instagram.com')) socialSource = 'instagram';
-      else if (referrer.includes('tiktok.com')) socialSource = 'tiktok';
-      else if (referrer.includes('youtube.com') || referrer.includes('youtu.be')) socialSource = 'youtube';
-      else if (referrer.includes('facebook.com')) socialSource = 'facebook';
-      else if (referrer.includes('twitter.com') || referrer.includes('x.com')) socialSource = 'twitter';
-      
-      // Salva dados do influenciador na sessão se detectado
-      const hasInfluencerData = Object.values(influencerParams).some(val => val !== null);
-      
-      if (hasInfluencerData || socialSource) {
-        const influencerData = {
-          ...influencerParams,
-          social_source: socialSource,
-          detected_at: Date.now(),
-          landing_page: window.location.href
-        };
-        
-        sessionStorage.setItem('inf_attribution', JSON.stringify(influencerData));
-        return influencerData;
-      }
-      
-      // Retorna dados salvos se existirem
-      const saved = sessionStorage.getItem('inf_attribution');
-      return saved ? JSON.parse(saved) : null;
-    }
-  };
-
-  // ========== DEVICE FINGERPRINTING ==========
-  const DeviceFingerprint = {
-    generate: function() {
-      const screen = window.screen;
-      const nav = navigator;
-      
-      return {
-        user_agent: nav.userAgent,
-        language: nav.language,
-        platform: nav.platform,
-        screen_resolution: `${screen.width}x${screen.height}`,
-        color_depth: screen.colorDepth,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        device_memory: nav.deviceMemory || null,
-        hardware_concurrency: nav.hardwareConcurrency || null,
-        connection: nav.connection ? {
-          effective_type: nav.connection.effectiveType,
-          downlink: nav.connection.downlink
-        } : null
-      };
-    }
-  };
-
-  // ========== QUEUE DE EVENTOS ==========
-  const EventQueue = {
-    queue: [],
-    
-    add: function(event) {
-      this.queue.push(event);
-      
-      if (this.queue.length >= CONFIG.batchSize) {
-        this.flush();
-      }
-    },
-    
-    flush: function() {
-      if (this.queue.length === 0 || !CONFIG.apiEndpoint) return;
-      
-      const events = this.queue.splice(0, CONFIG.batchSize);
-      
-      // Envia para API
-      fetch(CONFIG.apiEndpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+        const consent = localStorage.getItem('analytics_consent');
+        return consent === 'granted';
         },
-        body: JSON.stringify({
-          project_id: CONFIG.projectId,
-          events: events,
-          version: CONFIG.version
-        })
-      }).catch(error => {
-        console.warn('Influencer Tracker: Failed to send events', error);
-        // Salva no localStorage como fallback
-        const stored = JSON.parse(localStorage.getItem('inf_failed_events') || '[]');
-        stored.push(...events);
-        localStorage.setItem('inf_failed_events', JSON.stringify(stored.slice(-100))); // Máximo 100 eventos
-      });
-    },
-    
-    scheduleFlush: function() {
-      if (this.flushTimer) clearTimeout(this.flushTimer);
-      this.flushTimer = setTimeout(() => this.flush(), CONFIG.batchTimeout);
-    }
-  };
-
-  // ========== TRACKER PRINCIPAL ==========
-  const InfluencerTracker = {
-    initialized: false,
-    startTime: Date.now(),
-    platform: 'generic',
-    adapter: null,
-    
-    init: function(options = {}) {
-      if (this.initialized) return;
-      
-      // Configura opções
-      Object.assign(CONFIG, options);
-      
-      if (!CONFIG.apiEndpoint) {
-        console.warn('Influencer Tracker: apiEndpoint não configurado');
-        return;
-      }
-      
-      // Detecta plataforma
-      this.platform = this.detectPlatform();
-      console.log(`🎯 Plataforma detectada: ${this.platform}`);
-      
-      // Carrega adaptador
-      this.adapter = this.loadAdapter(this.platform);
-      
-      // Verifica consent antes de iniciar
-      if (CONFIG.enableConsentCheck && !ConsentManager.checkConsent()) {
-        ConsentManager.waitForConsent(() => this.startTracking());
-        return;
-      }
-      
-      this.startTracking();
-    },
-    
-    detectPlatform: function() {
-      // Shopify
-      if (window.Shopify || window.shopifyData || 
-          document.querySelector('meta[name="shopify-checkout-api-token"]')) {
-        return 'shopify';
-      }
-      
-      return 'generic';
-    },
-    
-    loadAdapter: function(platform) {
-      const adapterName = `${platform}Adapter`;
-      return window[adapterName] || null;
-    },
-    
-    startTracking: function() {
-      this.initialized = true;
-      
-      // Detecta influenciador
-      const influencerData = InfluencerDetector.detectInfluencer();
-      
-      // Evento de page view
-      this.track('page_view', {
-        page_url: window.location.href,
-        page_title: document.title,
-        referrer: document.referrer,
-        influencer_data: influencerData
-      });
-      
-      // Configura listeners universais
-      this.setupUniversalTracking();
-      
-      // Inicialização específica da plataforma
-      if (this.adapter?.init) {
-        this.adapter.init();
-      }
-      
-      // Flush automático
-      EventQueue.scheduleFlush();
-      
-      // Flush quando sair da página
-      window.addEventListener('beforeunload', () => EventQueue.flush());
-      
-      console.log('Influencer Tracker: Inicializado com sucesso');
-    },
-    
-    track: function(eventType, properties = {}) {
-      if (!this.initialized) return;
-      
-      const event = {
-        event_id: IdGenerator.generateUUID(),
-        event_type: eventType,
-        timestamp: Date.now(),
-        user_id: IdGenerator.getUserId(),
-        session_id: IdGenerator.getSessionId(),
-        page_url: window.location.href,
-        device_fingerprint: DeviceFingerprint.generate(),
-        platform: this.platform,
-        properties: properties
-      };
-      
-      // Enriquecer com dados específicos da plataforma
-      if (this.adapter?.enrichEvent) {
-        Object.assign(event.properties, this.adapter.enrichEvent(eventType, properties));
-      }
-      
-      EventQueue.add(event);
-    },
-    
-    setupUniversalTracking: function() {
-      // Tracking de scroll
-      let maxScroll = 0;
-      window.addEventListener('scroll', this.throttle(() => {
-        const scrollPercent = Math.round((window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100);
-        if (scrollPercent > maxScroll) {
-          maxScroll = scrollPercent;
-          
-          // Marcos de scroll
-          if ([25, 50, 75, 90].includes(scrollPercent)) {
-            this.track('scroll_milestone', { scroll_percent: scrollPercent });
-          }
+        
+        waitForConsent: function(callback) {
+        const checkInterval = setInterval(() => {
+            if (this.checkConsent()) {
+            clearInterval(checkInterval);
+            callback();
+            }
+        }, 500);
+        
+        // Timeout após 10 segundos
+        setTimeout(() => {
+            clearInterval(checkInterval);
+        }, 10000);
         }
-      }, 1000));
-      
-      // Tracking de cliques universais
-      document.addEventListener('click', (e) => {
-        const element = e.target;
-        const properties = {
-          element_tag: element.tagName,
-          element_classes: element.className,
-          element_id: element.id,
-          element_text: element.textContent?.substring(0, 100),
-          x: e.clientX,
-          y: e.clientY
+    };
+
+    // ========== GERAÇÃO DE IDs ÚNICOS ==========
+    const IdGenerator = {
+        generateUUID: function() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            const r = Math.random() * 16 | 0;
+            const v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+        },
+        
+        getUserId: function() {
+        let userId = localStorage.getItem('inf_user_id');
+        if (!userId) {
+            userId = this.generateUUID();
+            localStorage.setItem('inf_user_id', userId);
+        }
+        return userId;
+        },
+        
+        getSessionId: function() {
+        let sessionData = sessionStorage.getItem('inf_session');
+        
+        if (sessionData) {
+            const session = JSON.parse(sessionData);
+            const now = Date.now();
+            
+            // Verifica se a sessão não expirou
+            if (now - session.lastActivity < CONFIG.sessionTimeout) {
+            session.lastActivity = now;
+            sessionStorage.setItem('inf_session', JSON.stringify(session));
+            return session.id;
+            }
+        }
+        
+        // Cria nova sessão
+        const newSession = {
+            id: this.generateUUID(),
+            startTime: Date.now(),
+            lastActivity: Date.now()
         };
         
-        this.track('click', properties);
-      });
-      
-      // Tracking de formulários
-      document.addEventListener('submit', (e) => {
-        const form = e.target;
-        this.track('form_submit', {
-          form_id: form.id,
-          form_classes: form.className,
-          form_action: form.action,
-          field_count: form.elements.length
-        });
-      });
-      
-      // Tracking de tempo na página
-      let timeOnPage = 0;
-      setInterval(() => {
-        timeOnPage += 10;
+        sessionStorage.setItem('inf_session', JSON.stringify(newSession));
+        return newSession.id;
+        }
+    };
+
+    // ========== DETECÇÃO DE INFLUENCIADOR ==========
+    const InfluencerDetector = {
+        detectInfluencer: function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
         
-        // Marcos de tempo
-        if ([30, 60, 120, 300].includes(timeOnPage)) {
-          this.track('time_milestone', { seconds_on_page: timeOnPage });
+        // Verifica parâmetros de influenciador na URL
+        const influencerParams = {
+            influencer_id: urlParams.get('inf_id') || urlParams.get('influencer') || hashParams.get('inf_id'),
+            campaign_id: urlParams.get('camp_id') || urlParams.get('campaign') || hashParams.get('camp_id'),
+            promo_code: urlParams.get('promo') || urlParams.get('codigo') || hashParams.get('promo'),
+            utm_source: urlParams.get('utm_source'),
+            utm_medium: urlParams.get('utm_medium'),
+            utm_campaign: urlParams.get('utm_campaign'),
+            ref: urlParams.get('ref')
+        };
+        
+        // Detecta origem de redes sociais
+        const referrer = document.referrer;
+        let socialSource = null;
+        
+        if (referrer.includes('instagram.com')) socialSource = 'instagram';
+        else if (referrer.includes('tiktok.com')) socialSource = 'tiktok';
+        else if (referrer.includes('youtube.com') || referrer.includes('youtu.be')) socialSource = 'youtube';
+        else if (referrer.includes('facebook.com')) socialSource = 'facebook';
+        else if (referrer.includes('twitter.com') || referrer.includes('x.com')) socialSource = 'twitter';
+        
+        // Salva dados do influenciador na sessão se detectado
+        const hasInfluencerData = Object.values(influencerParams).some(val => val !== null);
+        
+        if (hasInfluencerData || socialSource) {
+            const influencerData = {
+            ...influencerParams,
+            social_source: socialSource,
+            detected_at: Date.now(),
+            landing_page: window.location.href
+            };
+            
+            sessionStorage.setItem('inf_attribution', JSON.stringify(influencerData));
+            return influencerData;
         }
-      }, 10000);
-      
-      // Tracking de saída
-      this.setupExitTracking();
-    },
-    
-    setupExitTracking: function() {
-      let exitTracked = false;
-      
-      document.addEventListener('mouseleave', (e) => {
-        if (e.clientY <= 0 && !exitTracked) {
-          exitTracked = true;
-          this.track('exit_intent', {
-            time_on_page: Date.now() - this.startTime,
-            scroll_percent: Math.round((window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100)
-          });
+        
+        // Retorna dados salvos se existirem
+        const saved = sessionStorage.getItem('inf_attribution');
+        return saved ? JSON.parse(saved) : null;
         }
-      });
-    },
-    
-    // Métodos públicos para tracking manual
-    trackPurchase: function(orderData) {
-      this.track('purchase', {
-        order_id: orderData.orderId,
-        total_value: orderData.totalValue,
-        currency: orderData.currency || 'BRL',
-        items: orderData.items,
-        coupon_code: orderData.couponCode,
-        influencer_attribution: JSON.parse(sessionStorage.getItem('inf_attribution') || 'null')
-      });
-    },
-    
-    trackCustomEvent: function(eventName, properties) {
-      this.track(eventName, properties);
-    },
-    
-    // Utility function
-    throttle: function(func, limit) {
-      let inThrottle;
-      return function() {
-        const args = arguments;
-        const context = this;
-        if (!inThrottle) {
-          func.apply(context, args);
-          inThrottle = true;
-          setTimeout(() => inThrottle = false, limit);
+    };
+
+    // ========== DEVICE FINGERPRINTING ==========
+    const DeviceFingerprint = {
+        generate: function() {
+        const screen = window.screen;
+        const nav = navigator;
+        
+        return {
+            user_agent: nav.userAgent,
+            language: nav.language,
+            platform: nav.platform,
+            screen_resolution: `${screen.width}x${screen.height}`,
+            color_depth: screen.colorDepth,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            device_memory: nav.deviceMemory || null,
+            hardware_concurrency: nav.hardwareConcurrency || null,
+            connection: nav.connection ? {
+            effective_type: nav.connection.effectiveType,
+            downlink: nav.connection.downlink
+            } : null
+        };
         }
-      };
-    }
-  };
-  
-  // ========== EXPÕE API GLOBAL ==========
-  window.InfluencerTracker = InfluencerTracker;
-  
-  // Expõe módulos internos para adaptadores
-  window.InfluencerTracker.ConsentManager = ConsentManager;
-  window.InfluencerTracker.IdGenerator = IdGenerator;
-  window.InfluencerTracker.InfluencerDetector = InfluencerDetector;
-  window.InfluencerTracker.DeviceFingerprint = DeviceFingerprint;
-  window.InfluencerTracker.EventQueue = EventQueue;
+    };
+
+    // ========== QUEUE DE EVENTOS ==========
+    const EventQueue = {
+        queue: [],
+        
+        add: function(event) {
+        this.queue.push(event);
+        
+        if (this.queue.length >= CONFIG.batchSize) {
+            this.flush();
+        }
+        },
+        
+        flush: function() {
+        if (this.queue.length === 0 || !CONFIG.apiEndpoint) return;
+        
+        const events = this.queue.splice(0, CONFIG.batchSize);
+        
+        // Envia para API
+        fetch(CONFIG.apiEndpoint, {
+            method: 'POST',
+            headers: {
+            'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+            project_id: CONFIG.projectId,
+            events: events,
+            version: CONFIG.version
+            })
+        }).catch(error => {
+            console.warn('Influencer Tracker: Failed to send events', error);
+            // Salva no localStorage como fallback
+            const stored = JSON.parse(localStorage.getItem('inf_failed_events') || '[]');
+            stored.push(...events);
+            localStorage.setItem('inf_failed_events', JSON.stringify(stored.slice(-100))); // Máximo 100 eventos
+        });
+        },
+        
+        scheduleFlush: function() {
+        if (this.flushTimer) clearTimeout(this.flushTimer);
+        this.flushTimer = setTimeout(() => this.flush(), CONFIG.batchTimeout);
+        }
+    };
+
+    // ========== TRACKER PRINCIPAL ==========
+    const InfluencerTracker = {
+        initialized: false,
+        startTime: Date.now(),
+        platform: 'generic',
+        adapter: null,
+        
+        init: function(options = {}) {
+        if (this.initialized) return;
+        
+        // Configura opções
+        Object.assign(CONFIG, options);
+        
+        if (!CONFIG.apiEndpoint) {
+            console.warn('Influencer Tracker: apiEndpoint não configurado');
+            return;
+        }
+        
+        // Detecta plataforma
+        this.platform = this.detectPlatform();
+        console.log(`🎯 Plataforma detectada: ${this.platform}`);
+        
+        // Carrega adaptador
+        this.adapter = this.loadAdapter(this.platform);
+        
+        // Verifica consent antes de iniciar
+        if (CONFIG.enableConsentCheck && !ConsentManager.checkConsent()) {
+            ConsentManager.waitForConsent(() => this.startTracking());
+            return;
+        }
+        
+        this.startTracking();
+        },
+        
+        detectPlatform: function() {
+        // Shopify
+        if (window.Shopify || window.shopifyData || 
+            document.querySelector('meta[name="shopify-checkout-api-token"]')) {
+            return 'shopify';
+        }
+        
+        return 'generic';
+        },
+        
+        loadAdapter: function(platform) {
+        const adapterName = `${platform}Adapter`;
+        return window[adapterName] || null;
+        },
+        
+        startTracking: function() {
+        this.initialized = true;
+        
+        // Detecta influenciador
+        const influencerData = InfluencerDetector.detectInfluencer();
+        
+        // Evento de page view
+        this.track('page_view', {
+            page_url: window.location.href,
+            page_title: document.title,
+            referrer: document.referrer,
+            influencer_data: influencerData
+        });
+        
+        // Configura listeners universais
+        this.setupUniversalTracking();
+        
+        // Inicialização específica da plataforma
+        if (this.adapter?.init) {
+            this.adapter.init();
+        }
+        
+        // Flush automático
+        EventQueue.scheduleFlush();
+        
+        // Flush quando sair da página
+        window.addEventListener('beforeunload', () => EventQueue.flush());
+        
+        console.log('Influencer Tracker: Inicializado com sucesso');
+        },
+        
+        track: function(eventType, properties = {}) {
+        if (!this.initialized) return;
+        
+        const event = {
+            event_id: IdGenerator.generateUUID(),
+            event_type: eventType,
+            timestamp: Date.now(),
+            user_id: IdGenerator.getUserId(),
+            session_id: IdGenerator.getSessionId(),
+            page_url: window.location.href,
+            device_fingerprint: DeviceFingerprint.generate(),
+            platform: this.platform,
+            properties: properties
+        };
+        
+        // Enriquecer com dados específicos da plataforma
+        if (this.adapter?.enrichEvent) {
+            Object.assign(event.properties, this.adapter.enrichEvent(eventType, properties));
+        }
+        
+        EventQueue.add(event);
+        },
+        
+        setupUniversalTracking: function() {
+        // Tracking de scroll
+        let maxScroll = 0;
+        window.addEventListener('scroll', this.throttle(() => {
+            const scrollPercent = Math.round((window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100);
+            if (scrollPercent > maxScroll) {
+            maxScroll = scrollPercent;
+            
+            // Marcos de scroll
+            if ([25, 50, 75, 90].includes(scrollPercent)) {
+                this.track('scroll_milestone', { scroll_percent: scrollPercent });
+            }
+            }
+        }, 1000));
+        
+        // Tracking de cliques universais
+        document.addEventListener('click', (e) => {
+            const element = e.target;
+            const properties = {
+            element_tag: element.tagName,
+            element_classes: element.className,
+            element_id: element.id,
+            element_text: element.textContent?.substring(0, 100),
+            x: e.clientX,
+            y: e.clientY
+            };
+            
+            this.track('click', properties);
+        });
+        
+        // Tracking de formulários
+        document.addEventListener('submit', (e) => {
+            const form = e.target;
+            this.track('form_submit', {
+            form_id: form.id,
+            form_classes: form.className,
+            form_action: form.action,
+            field_count: form.elements.length
+            });
+        });
+        
+        // Tracking de tempo na página
+        let timeOnPage = 0;
+        setInterval(() => {
+            timeOnPage += 10;
+            
+            // Marcos de tempo
+            if ([30, 60, 120, 300].includes(timeOnPage)) {
+            this.track('time_milestone', { seconds_on_page: timeOnPage });
+            }
+        }, 10000);
+        
+        // Tracking de saída
+        this.setupExitTracking();
+        },
+        
+        setupExitTracking: function() {
+        let exitTracked = false;
+        
+        document.addEventListener('mouseleave', (e) => {
+            if (e.clientY <= 0 && !exitTracked) {
+            exitTracked = true;
+            this.track('exit_intent', {
+                time_on_page: Date.now() - this.startTime,
+                scroll_percent: Math.round((window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100)
+            });
+            }
+        });
+        },
+        
+        // Métodos públicos para tracking manual
+        trackPurchase: function(orderData) {
+        this.track('purchase', {
+            order_id: orderData.orderId,
+            total_value: orderData.totalValue,
+            currency: orderData.currency || 'BRL',
+            items: orderData.items,
+            coupon_code: orderData.couponCode,
+            influencer_attribution: JSON.parse(sessionStorage.getItem('inf_attribution') || 'null')
+        });
+        },
+        
+        trackCustomEvent: function(eventName, properties) {
+        this.track(eventName, properties);
+        },
+    };
+
+    // ========== EXPÕE API GLOBAL ==========
+    window.InfluencerTracker = InfluencerTracker;
 
 })(window, document);
 
@@ -745,98 +724,158 @@
       });
     },
     
-    setupCartTracking: function() {
-      const tracker = window.InfluencerTracker;
-      
-      // Observer inteligente para mudanças no carrinho
-      const cartObserver = new MutationObserver((mutations) => {
-        let shouldCheck = false;
-        
-        mutations.forEach((mutation) => {
-          if (mutation.type === 'childList') {
-            // Verifica se elementos adicionados/removidos são relacionados ao carrinho
-            const relevantChanges = [...mutation.addedNodes, ...mutation.removedNodes]
-              .some(node => {
-                if (node.nodeType !== Node.ELEMENT_NODE) return false;
-                
-                const element = node;
-                return (
-                  element.matches?.('[data-cart-item], .cart-item, .line-item, .cart__item') ||
-                  element.querySelector?.('[data-cart-item], .cart-item, .line-item, .cart__item') ||
-                  element.classList?.contains('cart-item') ||
-                  element.getAttribute?.('data-cart-item') !== null
-                );
-              });
-            
-            if (relevantChanges) {
-              shouldCheck = true;
-            }
-          }
-          
-          // Verifica mudanças de atributos relevantes
-          if (mutation.type === 'attributes') {
-            const relevantAttributes = ['data-cart-item', 'data-quantity', 'data-price', 'data-cart-total'];
-            if (relevantAttributes.includes(mutation.attributeName)) {
-              shouldCheck = true;
-            }
-          }
-        });
-        
-        if (shouldCheck) {
-          this.checkCartChange('dom_mutation');
-        }
-      });
-      
-      // Observar containers específicos do carrinho
-      const cartContainers = [
-        '[data-cart-container]',
-        '.cart-drawer',
-        '.mini-cart',
-        '.cart-items',
-        '.drawer-cart',
-        '#cart-drawer',
-        '.cart',
-        '.cart-form'
-      ];
-      
-      let cartContainer = null;
-      
-      for (const selector of cartContainers) {
-        cartContainer = document.querySelector(selector);
-        if (cartContainer) {
-          console.log('🎯 Cart container encontrado:', selector);
-          break;
-        }
-      }
-      
-      // Fallback para body, mas com filtros
-      if (!cartContainer) {
-        cartContainer = document.body;
-        console.log('⚠️ Usando body como fallback para cart observer');
-      }
-      
-      // Inicia observação
-      cartObserver.observe(cartContainer, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: ['data-cart-item', 'data-quantity', 'data-price', 'data-cart-total', 'class']
-      });
-      
-      // Interceptar mudanças em inputs de quantidade
-      document.addEventListener('change', (e) => {
-        if (e.target.matches('input[name*="quantity"], .cart-quantity, .qty-input, input[data-quantity-item]')) {
-          tracker.trackCustomEvent('shopify_cart_quantity_input_change', {
-            new_quantity: e.target.value,
-            trigger_element: 'quantity_input'
-          });
-          
-          setTimeout(() => {
-            this.checkCartChange('quantity_input');
-          }, 500);
-        }
-      });
-    },
+	setupCartTracking: function() {
+		const tracker = window.InfluencerTracker;
+		console.log('🛒 Setup cart tracking (sem AJAX interception)');
+		
+		// ========== MUTATION OBSERVER OTIMIZADO ==========
+		const cartObserver = new MutationObserver((mutations) => {
+		  let shouldCheck = false;
+		  
+		  mutations.forEach((mutation) => {
+			// Verificar apenas mudanças relevantes
+			if (mutation.type === 'childList') {
+			  const relevantChanges = [...mutation.addedNodes, ...mutation.removedNodes]
+				.some(node => {
+				  if (node.nodeType !== Node.ELEMENT_NODE) return false;
+				  
+				  return (
+					node.matches?.('[data-cart-item], .cart-item, .line-item') ||
+					node.querySelector?.('[data-cart-item], .cart-item, .line-item') ||
+					node.classList?.contains('cart-item')
+				  );
+				});
+			  
+			  if (relevantChanges) shouldCheck = true;
+			}
+			
+			// Mudanças em atributos de carrinho
+			if (mutation.type === 'attributes') {
+			  const cartAttributes = ['data-cart-item', 'data-quantity', 'data-cart-total'];
+			  if (cartAttributes.includes(mutation.attributeName)) {
+				shouldCheck = true;
+			  }
+			}
+		  });
+		  
+		  if (shouldCheck) {
+			this.checkCartChange('dom_mutation');
+		  }
+		});
+		
+		// ========== CONTAINERS PARA OBSERVAR ==========
+		const cartContainers = [
+		  '[data-cart-container]',
+		  '.cart-drawer',
+		  '.mini-cart', 
+		  '.cart-items',
+		  '.cart',
+		  '.cart-form'
+		];
+		
+		let observedContainers = 0;
+		
+		cartContainers.forEach(selector => {
+		  const container = document.querySelector(selector);
+		  if (container) {
+			cartObserver.observe(container, {
+			  childList: true,
+			  subtree: true,
+			  attributes: true,
+			  attributeFilter: ['data-cart-item', 'data-quantity', 'data-cart-total']
+			});
+			observedContainers++;
+			console.log(`👀 Observando container: ${selector}`);
+		  }
+		});
+		
+		// Fallback: observar body se nenhum container específico
+		if (observedContainers === 0) {
+		  cartObserver.observe(document.body, {
+			childList: true,
+			subtree: true,
+			attributes: true,
+			attributeFilter: ['data-cart-item', 'data-quantity', 'data-cart-total']
+		  });
+		  console.log('👀 Observando body como fallback');
+		}
+		
+		// ========== EVENT LISTENERS ESPECÍFICOS ==========
+		
+		// 1. Form submits (add to cart, update cart)
+		document.addEventListener('submit', (e) => {
+		  const form = e.target;
+		  
+		  if (form.matches('[action*="/cart/add"], [action*="/cart/update"], .cart-form')) {
+			console.log('📝 Form submit detectado:', form.action);
+			
+			// Aguardar processamento e verificar mudanças
+			setTimeout(() => {
+			  this.checkCartChange('form_submit');
+			}, 1500);
+		  }
+		});
+		
+		// 2. Quantity input changes
+		document.addEventListener('change', (e) => {
+		  if (e.target.matches('input[name*="quantity"], .cart-quantity, .qty-input')) {
+			console.log('🔢 Quantity change detectado');
+			
+			// Debounce para evitar múltiplos triggers
+			if (this.quantityChangeTimeout) {
+			  clearTimeout(this.quantityChangeTimeout);
+			}
+			
+			this.quantityChangeTimeout = setTimeout(() => {
+			  this.checkCartChange('quantity_change');
+			}, 1000);
+		  }
+		});
+		
+		// 3. Button clicks (quantity +/-, remove, etc.)
+		document.addEventListener('click', (e) => {
+		  const button = e.target;
+		  
+		  // Botões de quantidade
+		  if (button.matches('.qty-btn, [data-quantity-change]')) {
+			console.log('🔘 Quantity button clicked');
+			setTimeout(() => {
+			  this.checkCartChange('quantity_button');
+			}, 500);
+		  }
+		  
+		  // Botões de remoção
+		  if (button.matches('.cart-remove, [data-cart-remove]')) {
+			console.log('🗑️ Remove button clicked');
+			setTimeout(() => {
+			  this.checkCartChange('item_remove');
+			}, 1000);
+		  }
+		  
+		  // Add to cart buttons
+		  if (button.matches('.btn-add-to-cart, [data-add-to-cart], .product-form__cart-submit')) {
+			console.log('➕ Add to cart button clicked');
+			setTimeout(() => {
+			  this.checkCartChange('add_to_cart');
+			}, 2000);
+		  }
+		});
+		
+		// ========== VERIFICAÇÃO PERIÓDICA ==========
+		// Como fallback, verificar carrinho periodicamente
+		setInterval(() => {
+		  this.checkCartChange('periodic_check');
+		}, 45000); // A cada 45 segundos
+		
+		// ========== ESTADO INICIAL ==========
+		this.lastCartState = {
+		  items: this.getCartItemCount(),
+		  value: this.getCartValue()
+		};
+		
+		console.log('🛒 Estado inicial do carrinho:', this.lastCartState);
+		console.log(`✅ Cart tracking ativo (${observedContainers} containers observados)`);
+	},
     
     setupProductTracking: function() {
       const tracker = window.InfluencerTracker;
@@ -1067,6 +1106,151 @@
   };
 
 })(window, document);
+
+/* === src/utils/helpers.js === */
+/*!
+ * Influencer Tracker - Utility Functions
+ * Funções auxiliares compartilhadas
+ */
+
+(function(window) {
+    'use strict';
+    
+    window.InfluencerTrackerUtils = {
+      
+      // Debounce function
+      debounce: function(func, wait, immediate) {
+        let timeout;
+        return function executedFunction() {
+          const context = this;
+          const args = arguments;
+          
+          const later = function() {
+            timeout = null;
+            if (!immediate) func.apply(context, args);
+          };
+          
+          const callNow = immediate && !timeout;
+          clearTimeout(timeout);
+          timeout = setTimeout(later, wait);
+          
+          if (callNow) func.apply(context, args);
+        };
+      },
+      
+      // Throttle function
+      throttle: function(func, limit) {
+        let inThrottle;
+        return function() {
+          const args = arguments;
+          const context = this;
+          if (!inThrottle) {
+            func.apply(context, args);
+            inThrottle = true;
+            setTimeout(() => inThrottle = false, limit);
+          }
+        };
+      },
+      
+      // Get element position
+      getElementPosition: function(element) {
+        const rect = element.getBoundingClientRect();
+        return {
+          x: Math.round(rect.left),
+          y: Math.round(rect.top),
+          width: Math.round(rect.width),
+          height: Math.round(rect.height)
+        };
+      },
+      
+      // Parse currency values
+      parseCurrency: function(text) {
+        if (!text) return null;
+        
+        text = String(text).trim();
+        let cleaned = text.replace(/[^\d.,\-]/g, '');
+        
+        if (cleaned.includes(',') && cleaned.includes('.')) {
+          if (cleaned.lastIndexOf(',') > cleaned.lastIndexOf('.')) {
+            cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+          } else {
+            cleaned = cleaned.replace(/,/g, '');
+          }
+        } else if (cleaned.includes(',')) {
+          const parts = cleaned.split(',');
+          if (parts.length === 2 && parts[1].length <= 2) {
+            cleaned = cleaned.replace(',', '.');
+          } else {
+            cleaned = cleaned.replace(/,/g, '');
+          }
+        }
+        
+        const value = parseFloat(cleaned);
+        
+        if (value > 10000) {
+          return value / 100;
+        }
+        
+        return isNaN(value) ? null : value;
+      },
+      
+      // Check if element is visible
+      isElementVisible: function(element) {
+        const rect = element.getBoundingClientRect();
+        return (
+          rect.top >= 0 &&
+          rect.left >= 0 &&
+          rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+          rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+        );
+      },
+      
+      // Get scroll percentage
+      getScrollPercentage: function() {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+        return Math.round((scrollTop / scrollHeight) * 100);
+      },
+      
+      // Cookie utilities
+      setCookie: function(name, value, days) {
+        const expires = days ? `; expires=${new Date(Date.now() + days * 864e5).toUTCString()}` : '';
+        document.cookie = `${name}=${value}${expires}; path=/`;
+      },
+      
+      getCookie: function(name) {
+        return document.cookie.split('; ').reduce((r, v) => {
+          const parts = v.split('=');
+          return parts[0] === name ? decodeURIComponent(parts[1]) : r;
+        }, '');
+      },
+      
+      // Local storage with fallback
+      setStorage: function(key, value, useSession = false) {
+        try {
+          const storage = useSession ? sessionStorage : localStorage;
+          storage.setItem(key, JSON.stringify(value));
+          return true;
+        } catch (e) {
+          console.warn('Storage not available, using cookie fallback');
+          this.setCookie(key, JSON.stringify(value), useSession ? null : 30);
+          return false;
+        }
+      },
+      
+      getStorage: function(key, useSession = false) {
+        try {
+          const storage = useSession ? sessionStorage : localStorage;
+          const item = storage.getItem(key);
+          return item ? JSON.parse(item) : null;
+        } catch (e) {
+          const cookieValue = this.getCookie(key);
+          return cookieValue ? JSON.parse(cookieValue) : null;
+        }
+      }
+    };
+  
+  })(window);
 
 
 })(typeof window !== 'undefined' ? window : this, typeof document !== 'undefined' ? document : {});

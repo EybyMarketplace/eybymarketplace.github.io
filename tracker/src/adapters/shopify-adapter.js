@@ -297,98 +297,158 @@
       });
     },
     
-    setupCartTracking: function() {
-      const tracker = window.InfluencerTracker;
-      
-      // Observer inteligente para mudanças no carrinho
-      const cartObserver = new MutationObserver((mutations) => {
-        let shouldCheck = false;
-        
-        mutations.forEach((mutation) => {
-          if (mutation.type === 'childList') {
-            // Verifica se elementos adicionados/removidos são relacionados ao carrinho
-            const relevantChanges = [...mutation.addedNodes, ...mutation.removedNodes]
-              .some(node => {
-                if (node.nodeType !== Node.ELEMENT_NODE) return false;
-                
-                const element = node;
-                return (
-                  element.matches?.('[data-cart-item], .cart-item, .line-item, .cart__item') ||
-                  element.querySelector?.('[data-cart-item], .cart-item, .line-item, .cart__item') ||
-                  element.classList?.contains('cart-item') ||
-                  element.getAttribute?.('data-cart-item') !== null
-                );
-              });
-            
-            if (relevantChanges) {
-              shouldCheck = true;
-            }
-          }
-          
-          // Verifica mudanças de atributos relevantes
-          if (mutation.type === 'attributes') {
-            const relevantAttributes = ['data-cart-item', 'data-quantity', 'data-price', 'data-cart-total'];
-            if (relevantAttributes.includes(mutation.attributeName)) {
-              shouldCheck = true;
-            }
-          }
-        });
-        
-        if (shouldCheck) {
-          this.checkCartChange('dom_mutation');
-        }
-      });
-      
-      // Observar containers específicos do carrinho
-      const cartContainers = [
-        '[data-cart-container]',
-        '.cart-drawer',
-        '.mini-cart',
-        '.cart-items',
-        '.drawer-cart',
-        '#cart-drawer',
-        '.cart',
-        '.cart-form'
-      ];
-      
-      let cartContainer = null;
-      
-      for (const selector of cartContainers) {
-        cartContainer = document.querySelector(selector);
-        if (cartContainer) {
-          console.log('🎯 Cart container encontrado:', selector);
-          break;
-        }
-      }
-      
-      // Fallback para body, mas com filtros
-      if (!cartContainer) {
-        cartContainer = document.body;
-        console.log('⚠️ Usando body como fallback para cart observer');
-      }
-      
-      // Inicia observação
-      cartObserver.observe(cartContainer, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: ['data-cart-item', 'data-quantity', 'data-price', 'data-cart-total', 'class']
-      });
-      
-      // Interceptar mudanças em inputs de quantidade
-      document.addEventListener('change', (e) => {
-        if (e.target.matches('input[name*="quantity"], .cart-quantity, .qty-input, input[data-quantity-item]')) {
-          tracker.trackCustomEvent('shopify_cart_quantity_input_change', {
-            new_quantity: e.target.value,
-            trigger_element: 'quantity_input'
-          });
-          
-          setTimeout(() => {
-            this.checkCartChange('quantity_input');
-          }, 500);
-        }
-      });
-    },
+	setupCartTracking: function() {
+		const tracker = window.InfluencerTracker;
+		console.log('🛒 Setup cart tracking (sem AJAX interception)');
+		
+		// ========== MUTATION OBSERVER OTIMIZADO ==========
+		const cartObserver = new MutationObserver((mutations) => {
+		  let shouldCheck = false;
+		  
+		  mutations.forEach((mutation) => {
+			// Verificar apenas mudanças relevantes
+			if (mutation.type === 'childList') {
+			  const relevantChanges = [...mutation.addedNodes, ...mutation.removedNodes]
+				.some(node => {
+				  if (node.nodeType !== Node.ELEMENT_NODE) return false;
+				  
+				  return (
+					node.matches?.('[data-cart-item], .cart-item, .line-item') ||
+					node.querySelector?.('[data-cart-item], .cart-item, .line-item') ||
+					node.classList?.contains('cart-item')
+				  );
+				});
+			  
+			  if (relevantChanges) shouldCheck = true;
+			}
+			
+			// Mudanças em atributos de carrinho
+			if (mutation.type === 'attributes') {
+			  const cartAttributes = ['data-cart-item', 'data-quantity', 'data-cart-total'];
+			  if (cartAttributes.includes(mutation.attributeName)) {
+				shouldCheck = true;
+			  }
+			}
+		  });
+		  
+		  if (shouldCheck) {
+			this.checkCartChange('dom_mutation');
+		  }
+		});
+		
+		// ========== CONTAINERS PARA OBSERVAR ==========
+		const cartContainers = [
+		  '[data-cart-container]',
+		  '.cart-drawer',
+		  '.mini-cart', 
+		  '.cart-items',
+		  '.cart',
+		  '.cart-form'
+		];
+		
+		let observedContainers = 0;
+		
+		cartContainers.forEach(selector => {
+		  const container = document.querySelector(selector);
+		  if (container) {
+			cartObserver.observe(container, {
+			  childList: true,
+			  subtree: true,
+			  attributes: true,
+			  attributeFilter: ['data-cart-item', 'data-quantity', 'data-cart-total']
+			});
+			observedContainers++;
+			console.log(`👀 Observando container: ${selector}`);
+		  }
+		});
+		
+		// Fallback: observar body se nenhum container específico
+		if (observedContainers === 0) {
+		  cartObserver.observe(document.body, {
+			childList: true,
+			subtree: true,
+			attributes: true,
+			attributeFilter: ['data-cart-item', 'data-quantity', 'data-cart-total']
+		  });
+		  console.log('👀 Observando body como fallback');
+		}
+		
+		// ========== EVENT LISTENERS ESPECÍFICOS ==========
+		
+		// 1. Form submits (add to cart, update cart)
+		document.addEventListener('submit', (e) => {
+		  const form = e.target;
+		  
+		  if (form.matches('[action*="/cart/add"], [action*="/cart/update"], .cart-form')) {
+			console.log('📝 Form submit detectado:', form.action);
+			
+			// Aguardar processamento e verificar mudanças
+			setTimeout(() => {
+			  this.checkCartChange('form_submit');
+			}, 1500);
+		  }
+		});
+		
+		// 2. Quantity input changes
+		document.addEventListener('change', (e) => {
+		  if (e.target.matches('input[name*="quantity"], .cart-quantity, .qty-input')) {
+			console.log('🔢 Quantity change detectado');
+			
+			// Debounce para evitar múltiplos triggers
+			if (this.quantityChangeTimeout) {
+			  clearTimeout(this.quantityChangeTimeout);
+			}
+			
+			this.quantityChangeTimeout = setTimeout(() => {
+			  this.checkCartChange('quantity_change');
+			}, 1000);
+		  }
+		});
+		
+		// 3. Button clicks (quantity +/-, remove, etc.)
+		document.addEventListener('click', (e) => {
+		  const button = e.target;
+		  
+		  // Botões de quantidade
+		  if (button.matches('.qty-btn, [data-quantity-change]')) {
+			console.log('🔘 Quantity button clicked');
+			setTimeout(() => {
+			  this.checkCartChange('quantity_button');
+			}, 500);
+		  }
+		  
+		  // Botões de remoção
+		  if (button.matches('.cart-remove, [data-cart-remove]')) {
+			console.log('🗑️ Remove button clicked');
+			setTimeout(() => {
+			  this.checkCartChange('item_remove');
+			}, 1000);
+		  }
+		  
+		  // Add to cart buttons
+		  if (button.matches('.btn-add-to-cart, [data-add-to-cart], .product-form__cart-submit')) {
+			console.log('➕ Add to cart button clicked');
+			setTimeout(() => {
+			  this.checkCartChange('add_to_cart');
+			}, 2000);
+		  }
+		});
+		
+		// ========== VERIFICAÇÃO PERIÓDICA ==========
+		// Como fallback, verificar carrinho periodicamente
+		setInterval(() => {
+		  this.checkCartChange('periodic_check');
+		}, 45000); // A cada 45 segundos
+		
+		// ========== ESTADO INICIAL ==========
+		this.lastCartState = {
+		  items: this.getCartItemCount(),
+		  value: this.getCartValue()
+		};
+		
+		console.log('🛒 Estado inicial do carrinho:', this.lastCartState);
+		console.log(`✅ Cart tracking ativo (${observedContainers} containers observados)`);
+	},
     
     setupProductTracking: function() {
       const tracker = window.InfluencerTracker;
