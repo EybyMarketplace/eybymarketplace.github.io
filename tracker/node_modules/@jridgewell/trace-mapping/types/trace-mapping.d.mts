@@ -1,10 +1,10 @@
-import type { SourceMapSegment } from './sourcemap-segment.mts';
-import type { SourceMapV3, DecodedSourceMap, EncodedSourceMap, InvalidOriginalMapping, OriginalMapping, InvalidGeneratedMapping, GeneratedMapping, SourceMapInput, Needle, SourceNeedle, SourceMap, EachMapping, Ro } from './types.mts';
-export type { SourceMapSegment } from './sourcemap-segment.mts';
-export type { SourceMap, DecodedSourceMap, EncodedSourceMap, Section, SectionedSourceMap, SourceMapV3, Bias, EachMapping, GeneratedMapping, InvalidGeneratedMapping, InvalidOriginalMapping, Needle, OriginalMapping, OriginalMapping as Mapping, SectionedSourceMapInput, SourceMapInput, SourceNeedle, XInput, EncodedSourceMapXInput, DecodedSourceMapXInput, SectionedSourceMapXInput, SectionXInput, } from './types.mts';
+import type { SourceMapSegment } from './sourcemap-segment.d.mts';
+import type { SourceMapV3, DecodedSourceMap, EncodedSourceMap, InvalidOriginalMapping, OriginalMapping, InvalidGeneratedMapping, GeneratedMapping, SourceMapInput, Needle, SourceNeedle, SourceMap, EachMapping, Ro } from './types.d.mts';
+export type { SourceMapSegment } from './sourcemap-segment.d.mts';
+export type { SourceMap, DecodedSourceMap, EncodedSourceMap, Section, SectionedSourceMap, SourceMapV3, Bias, EachMapping, GeneratedMapping, InvalidGeneratedMapping, InvalidOriginalMapping, Needle, OriginalMapping, OriginalMapping as Mapping, SectionedSourceMapInput, SourceMapInput, SourceNeedle, XInput, EncodedSourceMapXInput, DecodedSourceMapXInput, SectionedSourceMapXInput, SectionXInput, } from './types.d.mts';
 export declare const LEAST_UPPER_BOUND = -1;
 export declare const GREATEST_LOWER_BOUND = 1;
-export { FlattenMap, FlattenMap as AnyMap } from './flatten-map.mts';
+export { FlattenMap, FlattenMap as AnyMap } from './flatten-map.d.mts';
 export declare class TraceMap implements SourceMap {
     version: SourceMapV3['version'];
     file: SourceMapV3['file'];
