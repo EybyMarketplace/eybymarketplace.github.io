@@ -1,7 +1,7 @@
 /*!
  * Influencer Tracker - SHOPIFY Build
  * Version: 2.0.0
- * Built: 2025-07-23T17:37:10.213Z
+ * Built: 2025-07-23T17:53:31.595Z
  * Files: src/core/tracker-core.js, src/adapters/shopify-adapter.js
  * 
  * Copyright (c) 2025
@@ -15,7 +15,7 @@
   const BUILD_INFO = {
     name: 'shopify',
     version: '2.0.0',
-    timestamp: '2025-07-23T17:37:10.213Z',
+    timestamp: '2025-07-23T17:53:31.596Z',
     files: ["src/core/tracker-core.js","src/adapters/shopify-adapter.js"]
   };
   
@@ -466,7 +466,6 @@
       this.setupCartTracking();
       this.setupProductTracking();
       this.setupCheckoutTracking();
-      this.setupAjaxInterception();
       
       // Estado inicial do carrinho
       this.lastCartState = {
@@ -962,66 +961,6 @@
       
       const checkoutContainer = document.querySelector('.checkout, #checkout, .main-content') || document.body;
       checkoutObserver.observe(checkoutContainer, { childList: true, subtree: true });
-    },
-    
-    setupAjaxInterception: function() {
-      const tracker = window.InfluencerTracker;
-      const self = this;
-      
-      // Interceptar fetch requests
-      const originalFetch = window.fetch;
-      window.fetch = function(...args) {
-        const url = args[0];
-        
-        // Interceptar requests do carrinho
-        if (typeof url === 'string' && (url.includes('/cart/') || url.includes('cart.js'))) {
-          tracker.trackCustomEvent('shopify_cart_ajax_request', {
-            url: url,
-            method: args[1]?.method || 'GET'
-          });
-          
-          // Aguardar resposta e verificar mudanças
-          return originalFetch.apply(this, args).then(response => {
-            if (response.ok) {
-              setTimeout(() => {
-                self.checkCartChange('ajax_request');
-              }, 500);
-            }
-            return response;
-          });
-        }
-        
-        return originalFetch.apply(this, args);
-      };
-      
-      // Interceptar XMLHttpRequest
-      const originalXHROpen = XMLHttpRequest.prototype.open;
-      XMLHttpRequest.prototype.open = function(method, url, ...args) {
-        this._url = url;
-        this._method = method;
-        
-        return originalXHROpen.apply(this, [method, url, ...args]);
-      };
-      
-      const originalXHRSend = XMLHttpRequest.prototype.send;
-      XMLHttpRequest.prototype.send = function(...args) {
-        if (this._url && (this._url.includes('/cart/') || this._url.includes('cart.js'))) {
-          tracker.trackCustomEvent('shopify_cart_xhr_request', {
-            url: this._url,
-            method: this._method
-          });
-          
-          this.addEventListener('load', () => {
-            if (this.status >= 200 && this.status < 300) {
-              setTimeout(() => {
-                self.checkCartChange('xhr_request');
-              }, 500);
-            }
-          });
-        }
-        
-        return originalXHRSend.apply(this, args);
-      };
     },
     
     // ========== FUNÇÕES AUXILIARES ==========
