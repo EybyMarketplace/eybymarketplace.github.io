@@ -1,7 +1,7 @@
 /*!
- * Influencer Tracker - SHOPIFY Build
+ * Influencer Tracker - FULL Build
  * Version: 2.1.0 with AI Analytics
- * Built: 2025-09-01T19:49:10.385Z
+ * Built: 2025-09-01T19:49:10.001Z
  * Files: src/core/tracker-core.js, src/adapters/shopify-adapter.js, src/ai/ai-data-collector.js, src/utils/helpers.js
  * 
  * Features:
@@ -21,9 +21,9 @@
   
   // Build info
   const BUILD_INFO = {
-    name: 'shopify',
+    name: 'full',
     version: '2.1.0',
-    timestamp: '2025-09-01T19:49:10.385Z',
+    timestamp: '2025-09-01T19:49:10.001Z',
     files: ["src/core/tracker-core.js","src/adapters/shopify-adapter.js","src/ai/ai-data-collector.js","src/utils/helpers.js"],
     features: {
       tracking: true,

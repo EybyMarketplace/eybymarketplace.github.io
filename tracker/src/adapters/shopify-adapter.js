@@ -224,8 +224,6 @@
 			cart_items_detail: window.shopifyData.cart?.items || []
 		  });
 		}
-		
-		// ❌ REMOVIDO: Event listeners para submit e click
 	  },
 	  
 	  setupCartTracking: function() {
@@ -356,8 +354,6 @@
 		  });
 		});
 		
-		// ❌ REMOVIDO: Event listeners para click
-		
 		// Tracking de variant selection
 		document.addEventListener('change', (e) => {
 		  if (e.target.matches('select[name="id"], input[name="id"], .product-form__variants select')) {
@@ -374,8 +370,6 @@
 	  
 	  setupCheckoutTracking: function() {
 		const tracker = window.InfluencerTracker;
-		
-		// ❌ REMOVIDO: Event listeners para click
 		
 		// Tracking na página de checkout
 		if (window.location.pathname.includes('/checkout')) {
