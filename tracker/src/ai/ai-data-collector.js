@@ -104,19 +104,21 @@
                     this.behaviorMetrics.pageViews++;
                     break;
                 case 'product_view':
+                case 'product_impression': 
                     this.behaviorMetrics.productViews++;
                     break;
-                case 'add_to_cart':
-                case 'remove_from_cart':
+                case 'cart_update': 
                     this.behaviorMetrics.cartActions++;
                     break;
-                case 'click':
-                    this.behaviorMetrics.totalClicks++;
-                    break;
-                case 'scroll':
+                case 'scroll_milestone': 
                     if (eventData && eventData.scroll_percent) {
                         this.behaviorMetrics.scrollDepth.push(eventData.scroll_percent);
                     }
+                    break;
+
+                case 'variant_selection':
+                case 'product_impression':
+                    this.behaviorMetrics.totalClicks++;
                     break;
             }
         },
