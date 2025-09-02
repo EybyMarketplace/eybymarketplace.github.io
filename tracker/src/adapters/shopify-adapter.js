@@ -57,53 +57,36 @@
 
 		// ========== FUNÇÕES DE CARRINHO ==========
 		getCartValue: function () {
-			console.log('🛒 getCartValue (Shopify)');
+			console.log('🛒 getCartValue (Shopify - API First)');
 
-			// ESTRATÉGIA 1: Dados do Shopify (mais confiável)
-			if (window.shopifyData?.cart?.total_price !== undefined) {
-				const value = window.shopifyData.cart.total_price;
-				console.log('   ✅ Via Shopify data:', value);
-				return value;
-			}
-
-			// ESTRATÉGIA 2: API do Shopify
+			// ESTRATÉGIA 1: API do Shopify (PRIORIDADE)
 			try {
 				const xhr = new XMLHttpRequest();
-				xhr.open('GET', '/cart.js', false);
+				xhr.open('GET', '/cart.js', false); // Síncrono para garantir valor atualizado
 				xhr.send();
 
 				if (xhr.status === 200) {
 					const cartData = JSON.parse(xhr.responseText);
 					const value = cartData.total_price / 100; // Shopify retorna em centavos
 					console.log('   ✅ Via API /cart.js:', value);
+
+					// Atualizar shopifyData se existir
+					if (window.shopifyData && window.shopifyData.cart) {
+						window.shopifyData.cart.total_price = value;
+						window.shopifyData.cart.item_count = cartData.item_count;
+					}
+
 					return value;
 				}
 			} catch (e) {
 				console.log('   ❌ Erro API:', e);
 			}
 
-			// ESTRATÉGIA 3: DOM (fallback)
-			const selectors = [
-				'[data-cart-total]',
-				'.cart-total',
-				'#cart-total',
-				'.basket-total',
-				'.cart__total',
-				'.drawer-cart__total'
-			];
-
-			for (const selector of selectors) {
-				const element = document.querySelector(selector);
-				if (element) {
-					const text = element.textContent || element.value || element.getAttribute('data-cart-total');
-					if (text) {
-						const value = this.parseCartValue(text);
-						if (value !== null) {
-							console.log('   ✅ Via DOM:', value);
-							return value;
-						}
-					}
-				}
+			// ESTRATÉGIA 2: Shopify data (fallback)
+			if (window.shopifyData?.cart?.total_price !== undefined) {
+				const value = window.shopifyData.cart.total_price;
+				console.log('   ⚠️ Via Shopify data (pode estar desatualizado):', value);
+				return value;
 			}
 
 			console.log('   ⚠️ Fallback para 0');
@@ -111,12 +94,9 @@
 		},
 
 		getCartItemCount: function () {
-			// Shopify data primeiro
-			if (window.shopifyData?.cart?.item_count !== undefined) {
-				return window.shopifyData.cart.item_count;
-			}
+			console.log('🛒 getCartItemCount (API First)');
 
-			// API como fallback
+			// API primeiro
 			try {
 				const xhr = new XMLHttpRequest();
 				xhr.open('GET', '/cart.js', false);
@@ -124,14 +104,25 @@
 
 				if (xhr.status === 200) {
 					const cartData = JSON.parse(xhr.responseText);
+					console.log('   ✅ Via API /cart.js:', cartData.item_count);
+
+					// Atualizar shopifyData se existir
+					if (window.shopifyData && window.shopifyData.cart) {
+						window.shopifyData.cart.item_count = cartData.item_count;
+					}
+
 					return cartData.item_count;
 				}
 			} catch (e) {
-				console.log('Erro ao buscar item count:', e);
+				console.log('   ❌ Erro API:', e);
 			}
 
-			// DOM como último recurso
-			return document.querySelectorAll('[data-cart-item], .cart-item, .line-item').length;
+			// Shopify data como fallback
+			if (window.shopifyData?.cart?.item_count !== undefined) {
+				return window.shopifyData.cart.item_count;
+			}
+
+			return 0;
 		},
 
 		getCartToken: function () {

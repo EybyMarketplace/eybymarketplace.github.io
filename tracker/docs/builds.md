@@ -1,12 +1,12 @@
 # Influencer Tracker v2.1.0 - Builds Disponíveis
 
-Gerado em: 2025-09-02T17:42:03.628Z
+Gerado em: 2025-09-02T17:52:49.524Z
 
 ## 📦 Builds Disponíveis
 
 ### full
 - **Arquivo**: `tracker-full.min.js`
-- **Tamanho**: 19.4 KB (minificado)
+- **Tamanho**: 19.3 KB (minificado)
 - **Recursos**: 🤖 **Com IA**
 - **Arquivos incluídos**: src/core/tracker-core.js, src/adapters/shopify-adapter.js, src/ai/ai-data-collector.js, src/utils/helpers.js
 
