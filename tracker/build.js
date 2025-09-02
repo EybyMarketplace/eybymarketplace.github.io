@@ -8,7 +8,7 @@ const BUILD_CONFIG = {
   full: {
     files: [
       'src/core/tracker-core.js',
-      'src/adapters/shopify-adapter.js',
+      'src/adapters/shopify/index.js',
       'src/ai/ai-data-collector.js',
       'src/utils/helpers.js'
     ],
@@ -19,7 +19,7 @@ const BUILD_CONFIG = {
   shopify: {
     files: [
       'src/core/tracker-core.js',
-      'src/adapters/shopify-adapter.js',
+      'src/adapters/shopify/index.js',
       'src/ai/ai-data-collector.js',
       'src/utils/helpers.js'
     ],
@@ -30,7 +30,7 @@ const BUILD_CONFIG = {
   'shopify-lite': {
     files: [
       'src/core/tracker-core.js',
-      'src/adapters/shopify-adapter.js',
+      'src/adapters/shopify/index.js',
       'src/utils/helpers.js'
     ],
     output: 'tracker-shopify-lite'
