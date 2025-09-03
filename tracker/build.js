@@ -18,8 +18,8 @@ const BUILD_CONFIG = {
   modules: [
     ...BASE_MODULES,
     'core/tracker-core.js',
-    'adapters/shopify-adapter.js',
-    'ai/ai-data-collector.js'
+    // 'adapters/shopify-adapter.js',
+    // 'ai/ai-data-collector.js'
   ],
   output: 'influencer-tracker'
 };
@@ -35,8 +35,8 @@ const MINIFY_OPTIONS = {
   mangle: {
     reserved: [
       'InfluencerTracker',
-      'shopifyAdapter',
-      'AIDataCollector'
+      // 'shopifyAdapter',
+      // 'AIDataCollector'
     ]
   },
   format: {
