@@ -1,0 +1,34 @@
+{
+  "version": "2.1.0",
+  "buildDate": "2025-09-03T21:20:27.793Z",
+  "files": [
+    "src/utils/utils.js",
+    "src/modules/config.js",
+    "src/modules/consent-manager.js",
+    "src/modules/id-generator.js",
+    "src/modules/influencer-detector.js",
+    "src/modules/device-fingerprint.js",
+    "src/modules/event-queue.js",
+    "src/core/tracker-core.js",
+    "src/adapters/shopify/core/state-manager.js",
+    "src/adapters/shopify/core/adapter-core.js",
+    "src/adapters/shopify/ecommerce/cart-tracker.js",
+    "src/adapters/shopify/ecommerce/product-tracker.js",
+    "src/adapters/shopify/ecommerce/api-interceptor.js",
+    "src/adapters/shopify/behavioral/scroll-tracker.js",
+    "src/adapters/shopify/behavioral/interaction-tracker.js",
+    "src/adapters/shopify/behavioral/time-tracker.js",
+    "src/adapters/shopify/checkout/checkout-tracker.js",
+    "src/adapters/shopify/checkout/form-monitor.js",
+    "src/adapters/shopify/checkout/abandonment-tracker.js",
+    "src/adapters/shopify/utils/data-extractors.js",
+    "src/adapters/shopify/utils/helpers.js",
+    "src/adapters/shopify/utils/session-manager.js",
+    "src/ai/ai-data-collector.js",
+    "src/adapters/shopify/shopify-adapter.js"
+  ],
+  "sizes": {
+    "debug": 123077,
+    "minified": 76061
+  }
+}

@@ -63,22 +63,6 @@
                 return 'shopify';
             }
             
-            // VTEX
-            if (window.vtex || window.vtexjs || 
-                document.querySelector('meta[name="vtex-version"]')) {
-                return 'vtex';
-            }
-            
-            // Nuvemshop
-            if (window.LS || document.querySelector('meta[name="nuvemshop"]')) {
-                return 'nuvemshop';
-            }
-            
-            // WooCommerce
-            if (window.wc || document.querySelector('meta[name="generator"][content*="WooCommerce"]')) {
-                return 'woocommerce';
-            }
-            
             return 'generic';
         },
         
