@@ -1,12 +1,12 @@
 /*!
  * Influencer Tracker - Influencer Detector Module
  */
-(function(global) {
+(function(window) {
     'use strict';
     
-    global.InfluencerTracker = global.InfluencerTracker || {};
+    window.InfluencerTracker = window.InfluencerTracker || {};
     
-    global.InfluencerTracker.InfluencerDetector = {
+    window.InfluencerTracker.InfluencerDetector = {
         // Chave de armazenamento
         ATTRIBUTION_KEY: 'inf_attribution',
         

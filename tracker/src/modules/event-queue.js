@@ -1,12 +1,12 @@
 /*!
  * Influencer Tracker - Event Queue Module
  */
-(function(global) {
+(function(window) {
     'use strict';
     
-    global.InfluencerTracker = global.InfluencerTracker || {};
+    window.InfluencerTracker = window.InfluencerTracker || {};
     
-    global.InfluencerTracker.EventQueue = {
+    window.InfluencerTracker.EventQueue = {
         // Propriedades da fila
         queue: [],
         flushTimer: null,
@@ -42,7 +42,7 @@
         add: function(event) {
             this.queue.push(event);
             
-            const config = global.InfluencerTracker.Config;
+            const config = window.InfluencerTracker.Config;
             const batchSize = config.get('batchSize');
             
             if (this.queue.length >= batchSize) {
@@ -58,7 +58,7 @@
                 clearTimeout(this.flushTimer);
             }
             
-            const config = global.InfluencerTracker.Config;
+            const config = window.InfluencerTracker.Config;
             const batchTimeout = config.get('batchTimeout');
             
             this.flushTimer = setTimeout(() => {
@@ -70,7 +70,7 @@
         flush: function() {
             if (this.queue.length === 0) return Promise.resolve();
             
-            const config = global.InfluencerTracker.Config;
+            const config = window.InfluencerTracker.Config;
             const apiEndpoint = config.get('apiEndpoint');
             const projectId = config.get('projectId');
             
@@ -93,7 +93,7 @@
         
         // Enviar eventos via fetch
         sendEvents: function(payload, originalEvents) {
-            const config = global.InfluencerTracker.Config;
+            const config = window.InfluencerTracker.Config;
             
             return fetch(config.get('apiEndpoint'), {
                 method: 'POST',

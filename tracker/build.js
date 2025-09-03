@@ -18,8 +18,8 @@ const BUILD_CONFIG = {
   modules: [
     ...BASE_MODULES,
     'core/tracker-core.js',
-    // 'adapters/shopify-adapter.js',
-    // 'ai/ai-data-collector.js'
+    'adapters/shopify-adapter.js',
+    'ai/ai-data-collector.js'
   ],
   output: 'influencer-tracker'
 };
@@ -35,8 +35,8 @@ const MINIFY_OPTIONS = {
   mangle: {
     reserved: [
       'InfluencerTracker',
-      // 'shopifyAdapter',
-      // 'AIDataCollector'
+      'shopifyAdapter',
+      'AIDataCollector'
     ]
   },
   format: {
@@ -158,8 +158,9 @@ function processModule(filePath, modulePath) {
   content = content.replace(/^\/\*![\s\S]*?\*\/\s*/, '');
   
   // Remover IIFEs externas para evitar conflitos no bundle
-  content = content.replace(/^\(function\(global\)\s*{/, '');
-  content = content.replace(/}\)\(window\);?\s*$/, '');
+  // Corrigir para remover tanto (function(global) quanto (function(window)
+  content = content.replace(/^\(function\((global|window)\)\s*{/, '');
+  content = content.replace(/}\)\((window|global)\);?\s*$/, '');
   
   // Remover console.log de carregamento de módulos
   content = content.replace(/console\.log\([^)]*module loaded[^)]*\);?\s*/g, '');

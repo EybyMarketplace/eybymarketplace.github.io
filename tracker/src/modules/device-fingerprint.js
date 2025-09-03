@@ -1,12 +1,12 @@
 /*!
  * Influencer Tracker - Device Fingerprint Module
  */
-(function(global) {
+(function(window) {
     'use strict';
     
-    global.InfluencerTracker = global.InfluencerTracker || {};
+    window.InfluencerTracker = window.InfluencerTracker || {};
     
-    global.InfluencerTracker.DeviceFingerprint = {
+    window.InfluencerTracker.DeviceFingerprint = {
         // Cache do fingerprint
         cachedFingerprint: null,
         

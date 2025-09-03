@@ -1,20 +1,20 @@
 /*!
  * Influencer Tracker - Core Module
  */
-(function(global) {
+(function(window) {
     'use strict';
     
     // Aliases para facilitar uso
-    const Config = global.InfluencerTracker.Config;
-    const ConsentManager = global.InfluencerTracker.ConsentManager;
-    const IdGenerator = global.InfluencerTracker.IdGenerator;
-    const InfluencerDetector = global.InfluencerTracker.InfluencerDetector;
-    const DeviceFingerprint = global.InfluencerTracker.DeviceFingerprint;
-    const EventQueue = global.InfluencerTracker.EventQueue;
-    const Utils = global.InfluencerTracker.Utils;
+    const Config = window.InfluencerTracker.Config;
+    const ConsentManager = window.InfluencerTracker.ConsentManager;
+    const IdGenerator = window.InfluencerTracker.IdGenerator;
+    const InfluencerDetector = window.InfluencerTracker.InfluencerDetector;
+    const DeviceFingerprint = window.InfluencerTracker.DeviceFingerprint;
+    const EventQueue = window.InfluencerTracker.EventQueue;
+    const Utils = window.InfluencerTracker.Utils;
     
     // Tracker Principal
-    global.InfluencerTracker.Core = {
+    window.InfluencerTracker.Core = {
         // Estado do tracker
         initialized: false,
         startTime: Date.now(),
@@ -85,7 +85,7 @@
         // Carregar adaptador da plataforma
         loadAdapter: function(platform) {
             const adapterName = `${platform}Adapter`;
-            return global[adapterName] || null;
+            return window[adapterName] || null;
         },
         
         // Iniciar tracking

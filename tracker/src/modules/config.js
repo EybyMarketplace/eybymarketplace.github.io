@@ -1,14 +1,14 @@
 /*!
  * Influencer Tracker - Configuration Module
  */
-(function(global) {
+(function(window) {
     'use strict';
     
     // Criar namespace se não existir
-    global.InfluencerTracker = global.InfluencerTracker || {};
+    window.InfluencerTracker = window.InfluencerTracker || {};
     
     // Módulo de Configuração
-    global.InfluencerTracker.Config = {
+    window.InfluencerTracker.Config = {
         // Configurações padrão
         defaults: {
             apiEndpoint: '',
@@ -50,7 +50,7 @@
     };
     
     // Auto-inicializar
-    global.InfluencerTracker.Config.init();
+    window.InfluencerTracker.Config.init();
     
     console.log('📋 Config module loaded');
     

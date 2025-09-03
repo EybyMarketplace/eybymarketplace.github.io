@@ -1,12 +1,12 @@
 /*!
  * Influencer Tracker - Utilities Module
  */
-(function(global) {
+(function(window) {
     'use strict';
     
-    global.InfluencerTracker = global.InfluencerTracker || {};
+    window.InfluencerTracker = window.InfluencerTracker || {};
     
-    global.InfluencerTracker.Utils = {
+    window.InfluencerTracker.Utils = {
         // Throttle function
         throttle: function(func, limit) {
             let inThrottle;

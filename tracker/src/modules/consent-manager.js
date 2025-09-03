@@ -1,12 +1,12 @@
 /*!
  * Influencer Tracker - Consent Manager Module (LGPD)
  */
-(function(global) {
+(function(window) {
     'use strict';
     
-    global.InfluencerTracker = global.InfluencerTracker || {};
+    window.InfluencerTracker = window.InfluencerTracker || {};
     
-    global.InfluencerTracker.ConsentManager = {
+    window.InfluencerTracker.ConsentManager = {
         // Chaves de armazenamento
         CONSENT_KEY: 'analytics_consent',
         CONSENT_DATE_KEY: 'analytics_consent_date',
@@ -16,7 +16,7 @@
         
         // Verificar se há consentimento
         checkConsent: function() {
-            const config = global.InfluencerTracker.Config;
+            const config = window.InfluencerTracker.Config;
             if (!config.get('enableConsentCheck')) return true;
             
             const consent = localStorage.getItem(this.CONSENT_KEY);

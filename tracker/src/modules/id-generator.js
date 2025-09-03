@@ -1,12 +1,12 @@
 /*!
  * Influencer Tracker - ID Generator Module
  */
-(function(global) {
+(function(window) {
     'use strict';
     
-    global.InfluencerTracker = global.InfluencerTracker || {};
+    window.InfluencerTracker = window.InfluencerTracker || {};
     
-    global.InfluencerTracker.IdGenerator = {
+    window.InfluencerTracker.IdGenerator = {
         // Chaves de armazenamento
         USER_ID_KEY: 'inf_user_id',
         SESSION_KEY: 'inf_session',
@@ -33,7 +33,7 @@
         // Obter ou criar Session ID
         getSessionId: function() {
             let sessionData = sessionStorage.getItem(this.SESSION_KEY);
-            const config = global.InfluencerTracker.Config;
+            const config = window.InfluencerTracker.Config;
             const sessionTimeout = config.get('sessionTimeout');
             
             if (sessionData) {

@@ -1,12 +1,12 @@
 # Influencer Tracker v2.1.0 for Shopify
 
-Built: 2025-09-03T18:16:01.999Z
+Built: 2025-09-03T18:34:38.186Z
 
 ## 📦 Build Information
 
 - **File**: `influencer-tracker.min.js`
-- **Size**: 15.7 KB (minified)
-- **Modules**: 8 included
+- **Size**: 48.9 KB (minified)
+- **Modules**: 10 included
 - **Platform**: Shopify
 - **AI**: Enabled
 
@@ -129,10 +129,12 @@ InfluencerTracker.init({
 - `modules/device-fingerprint.js`
 - `modules/event-queue.js`
 - `core/tracker-core.js`
+- `adapters/shopify-adapter.js`
+- `ai/ai-data-collector.js`
 
 ## 🔧 Build Details
 
-- **Original Size**: 38.8 KB
-- **Minified Size**: 15.7 KB
-- **Compression**: 59.6%
-- **Build Time**: 231ms
+- **Original Size**: 114.7 KB
+- **Minified Size**: 48.9 KB
+- **Compression**: 57.4%
+- **Build Time**: 761ms
