@@ -62,7 +62,7 @@ class ShopifyAdapterBuilder {
             'src/adapters/shopify/utils/session-manager.js',
 
             // AI components
-            'src/ai/ai-data-collector.js',
+            // 'src/ai/ai-data-collector.js',
 
             // Main entry point (MUST BE LAST)
             'src/adapters/shopify/shopify-adapter.js'
