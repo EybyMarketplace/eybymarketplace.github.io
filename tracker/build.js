@@ -2,380 +2,283 @@ const fs = require('fs');
 const path = require('path');
 const { minify } = require('terser');
 
-// Configuração dos builds
+// Módulos base (sempre incluídos)
+const BASE_MODULES = [
+  'modules/config.js',
+  'utils/utils.js',
+  'modules/consent-manager.js',
+  'modules/id-generator.js',
+  'modules/influencer-detector.js',
+  'modules/device-fingerprint.js',
+  'modules/event-queue.js'
+];
+
+// Configuração do build único
 const BUILD_CONFIG = {
-  // Build completo (todas as plataformas + IA)
-  full: {
-    files: [
-      'src/core/tracker-core.js',
-      'src/adapters/shopify-adapter.js',
-      'src/ai/ai-data-collector.js',
-      'src/utils/helpers.js'
-    ],
-    output: 'tracker-full'
-  },
-  
-  // Builds específicos por plataforma com IA
-  shopify: {
-    files: [
-      'src/core/tracker-core.js',
-      'src/adapters/shopify-adapter.js',
-      'src/ai/ai-data-collector.js',
-      'src/utils/helpers.js'
-    ],
-    output: 'tracker-shopify'
-  },
-  
-  // Build Shopify sem IA (mais leve)
-  'shopify-lite': {
-    files: [
-      'src/core/tracker-core.js',
-      'src/adapters/shopify-adapter.js',
-      'src/utils/helpers.js'
-    ],
-    output: 'tracker-shopify-lite'
-  },
-  
-  // Build genérico com IA
-  generic: {
-    files: [
-      'src/core/tracker-core.js',
-      'src/ai/ai-data-collector.js',
-      'src/utils/helpers.js'
-    ],
-    output: 'tracker-generic'
-  },
-  
-  // Build apenas IA (para usar com tracker existente)
-  'ai-only': {
-    files: [
-      'src/ai/ai-data-collector.js'
-    ],
-    output: 'tracker-ai-addon'
-  },
-  
-  // Build auto-detector (carrega dinamicamente)
-  auto: {
-    files: [
-      'src/core/auto-loader.js'
-    ],
-    output: 'tracker-auto'
-  }
+  modules: [
+    ...BASE_MODULES,
+    'core/tracker-core.js',
+    'adapters/shopify-adapter.js',
+    'ai/ai-data-collector.js'
+  ],
+  output: 'influencer-tracker'
 };
 
 // Configurações de minificação
 const MINIFY_OPTIONS = {
   compress: {
-    drop_console: false, // Manter console.log para debug
+    drop_console: false,
     drop_debugger: true,
     pure_funcs: ['console.debug'],
-    passes: 2,
-    unsafe: false
+    passes: 2
   },
   mangle: {
     reserved: [
       'InfluencerTracker',
       'shopifyAdapter',
-      'AIDataCollector',
-      'UserProfiler',
-      'BehaviorAnalyzer',
-      'CustomerJourneyAnalyzer'
+      'AIDataCollector'
     ]
   },
   format: {
     comments: false,
-    preamble: `/* Influencer Tracker v2.1.0 with AI | Built: ${new Date().toISOString()} */`
+    preamble: `/* Influencer Tracker v2.1.0 for Shopify | Built: ${new Date().toISOString()} */`
   }
 };
 
 async function buildScript() {
   try {
-    console.log('🚀 Iniciando build do Influencer Tracker v2.1.0 (com IA)...\n');
+    console.log('🚀 Building Influencer Tracker v2.1.0 for Shopify...\n');
     
     // Criar diretórios necessários
     ensureDirectories();
     
-    // Obter lista de builds para processar
-    const buildsToProcess = process.argv.includes('--all') ? 
-      Object.keys(BUILD_CONFIG) : 
-      process.argv.slice(2).filter(arg => !arg.startsWith('--')) || ['shopify']; // Default: shopify
+    // Validar estrutura de módulos
+    validateModuleStructure();
     
-    if (buildsToProcess.length === 0) {
-      console.log('ℹ️  Uso: node build.js [build1] [build2] ou --all');
-      console.log('ℹ️  Builds disponíveis:', Object.keys(BUILD_CONFIG).join(', '));
-      return;
-    }
+    // Processar build
+    const result = await processBuild();
     
-    const results = [];
-    
-    // Processar cada build
-    for (const buildName of buildsToProcess) {
-      if (!BUILD_CONFIG[buildName]) {
-        console.log(`⚠️  Build '${buildName}' não encontrado. Pulando...`);
-        continue;
-      }
-      
-      console.log(`📦 Processando build: ${buildName}`);
-      const result = await processBuild(buildName, BUILD_CONFIG[buildName]);
-      results.push(result);
-    }
-    
-    // Gerar auto-loader se necessário
-    if (buildsToProcess.includes('auto') || process.argv.includes('--all')) {
-      await generateAutoLoader();
-    }
-    
-    // Gerar documentação de builds
-    generateBuildDocs(results);
+    // Gerar documentação
+    generateDocs(result);
     
     // Relatório final
-    generateReport(results);
+    generateReport(result);
     
   } catch (error) {
-    console.error('❌ Erro no build:', error);
+    console.error('❌ Build error:', error);
     process.exit(1);
   }
 }
 
-async function processBuild(buildName, config) {
+function validateModuleStructure() {
+  console.log('🔍 Validating module structure...');
+  
+  const missingModules = BUILD_CONFIG.modules.filter(module => {
+    const fullPath = path.join(__dirname, 'src', module);
+    return !fs.existsSync(fullPath);
+  });
+  
+  if (missingModules.length > 0) {
+    console.warn(`⚠️  Missing modules: ${missingModules.join(', ')}`);
+  }
+  
+  console.log('✅ Validation completed');
+}
+
+async function processBuild() {
   const startTime = Date.now();
   
-  // Concatenar arquivos
-  let combinedCode = '';
-  const existingFiles = [];
+  console.log('📦 Processing build...');
   
-  for (const filePath of config.files) {
-    const fullPath = path.join(__dirname, filePath);
+  // Concatenar módulos
+  let combinedCode = '';
+  const existingModules = [];
+  
+  // Header do bundle
+  combinedCode += generateBundleHeader();
+  
+  // Processar cada módulo
+  for (const modulePath of BUILD_CONFIG.modules) {
+    const fullPath = path.join(__dirname, 'src', modulePath);
     
     if (fs.existsSync(fullPath)) {
-      const fileContent = fs.readFileSync(fullPath, 'utf8');
-      combinedCode += `\n/* === ${filePath} === */\n${fileContent}\n`;
-      existingFiles.push(filePath);
+      const moduleContent = processModule(fullPath, modulePath);
+      combinedCode += `\n    // ===== ${modulePath.toUpperCase()} =====\n`;
+      combinedCode += moduleContent;
+      combinedCode += '\n';
+      
+      existingModules.push(modulePath);
     } else {
-      console.log(`   ⚠️  Arquivo não encontrado: ${filePath}`);
+      console.log(`   ⚠️  Module not found: ${modulePath}`);
     }
   }
   
   if (combinedCode.trim() === '') {
-    throw new Error(`Nenhum arquivo válido encontrado para build '${buildName}'`);
+    throw new Error('No valid modules found for build');
   }
   
-  // Adicionar wrapper e metadata
-  const wrappedCode = wrapCode(combinedCode, buildName, existingFiles);
+  // Adicionar footer do bundle
+  combinedCode += generateBundleFooter();
   
   // Salvar versão não-minificada
-  const devFile = path.join(__dirname, 'dist', `${config.output}.js`);
-  fs.writeFileSync(devFile, wrappedCode);
+  const devFile = path.join(__dirname, 'dist', `${BUILD_CONFIG.output}.js`);
+  fs.writeFileSync(devFile, combinedCode);
   
   // Minificar
-  const minifyResult = await minify(wrappedCode, MINIFY_OPTIONS);
+  const minifyResult = await minify(combinedCode, MINIFY_OPTIONS);
   
   if (minifyResult.error) {
     throw minifyResult.error;
   }
   
   // Salvar versão minificada
-  const minFile = path.join(__dirname, 'dist', `${config.output}.min.js`);
+  const minFile = path.join(__dirname, 'dist', `${BUILD_CONFIG.output}.min.js`);
   fs.writeFileSync(minFile, minifyResult.code);
   
   // Calcular estatísticas
-  const originalSize = Buffer.byteLength(wrappedCode, 'utf8');
+  const originalSize = Buffer.byteLength(combinedCode, 'utf8');
   const minifiedSize = Buffer.byteLength(minifyResult.code, 'utf8');
   const buildTime = Date.now() - startTime;
   
-  const hasAI = existingFiles.some(file => file.includes('ai/'));
-  const aiIndicator = hasAI ? ' 🤖' : '';
-  
-  console.log(`   ✅ ${buildName}${aiIndicator}: ${(originalSize / 1024).toFixed(1)} KB → ${(minifiedSize / 1024).toFixed(1)} KB (${buildTime}ms)`);
+  console.log(`   ✅ Build completed: ${(originalSize / 1024).toFixed(1)} KB → ${(minifiedSize / 1024).toFixed(1)} KB (${buildTime}ms)`);
   
   return {
-    name: buildName,
-    files: existingFiles,
+    modules: existingModules,
     originalSize,
     minifiedSize,
     buildTime,
-    output: config.output,
-    hasAI
+    output: BUILD_CONFIG.output
   };
 }
 
-function wrapCode(code, buildName, files) {
-  const hasAI = files.some(file => file.includes('ai/'));
+function processModule(filePath, modulePath) {
+  let content = fs.readFileSync(filePath, 'utf8');
   
-  const header = `/*!
- * Influencer Tracker - ${buildName.toUpperCase()} Build
- * Version: 2.1.0${hasAI ? ' with AI Analytics' : ''}
+  // Remover header comments específicos do módulo
+  content = content.replace(/^\/\*![\s\S]*?\*\/\s*/, '');
+  
+  // Remover IIFEs externas para evitar conflitos no bundle
+  content = content.replace(/^\(function\(global\)\s*{/, '');
+  content = content.replace(/}\)\(window\);?\s*$/, '');
+  
+  // Remover console.log de carregamento de módulos
+  content = content.replace(/console\.log\([^)]*module loaded[^)]*\);?\s*/g, '');
+  
+  // Adicionar comentário de identificação do módulo
+  const moduleComment = `    // Module: ${modulePath}\n`;
+  
+  return moduleComment + content;
+}
+
+function generateBundleHeader() {
+  return `/*!
+ * Influencer Tracker for Shopify - Complete Bundle
+ * Version: 2.1.0 with AI Analytics
  * Built: ${new Date().toISOString()}
- * Files: ${files.join(', ')}
+ * Architecture: Modular Vanilla JS
+ * 
+ * Modules included: ${BUILD_CONFIG.modules.length}
+${BUILD_CONFIG.modules.map(m => ` * - ${m}`).join('\n')}
  * 
  * Features:
  * - Event Tracking ✅
  * - Affiliate Attribution ✅
- * - Platform Adapters ✅${hasAI ? '\n * - AI Behavioral Analysis 🤖\n * - Customer Journey Mapping 🤖\n * - Conversion Prediction 🤖' : ''}
+ * - Shopify Integration 🛍️
+ * - AI Behavioral Analysis 🤖
+ * - Customer Journey Mapping 🤖
+ * - Conversion Prediction 🤖
  * 
  * Copyright (c) ${new Date().getFullYear()}
  * Licensed under MIT
  */
 
 (function(window, document, undefined) {
-  'use strict';
-  
-  // Build info
-  const BUILD_INFO = {
-    name: '${buildName}',
-    version: '2.1.0',
-    timestamp: '${new Date().toISOString()}',
-    files: ${JSON.stringify(files)},
-    features: {
-      tracking: true,
-      attribution: true,
-      adapters: true,
-      ai: ${hasAI}
-    }
-  };
-  
-  // Expose build info
-  if (typeof window !== 'undefined') {
-    window.InfluencerTrackerBuild = BUILD_INFO;
-  }
-
-${code}
-
-})(typeof window !== 'undefined' ? window : this, typeof document !== 'undefined' ? document : {});`;
-
-  return header;
+    'use strict';
+    
+    // Build info
+    const BUILD_INFO = {
+        name: 'shopify-full',
+        version: '2.1.0',
+        platform: 'shopify',
+        timestamp: '${new Date().toISOString()}',
+        modules: ${JSON.stringify(BUILD_CONFIG.modules)},
+        features: {
+            tracking: true,
+            attribution: true,
+            shopify: true,
+            ai: true
+        }
+    };
+    
+    // Create global namespace
+    window.InfluencerTracker = window.InfluencerTracker || {};
+    
+    // Expose build info
+    window.InfluencerTracker.BuildInfo = BUILD_INFO;
+`;
 }
 
-async function generateAutoLoader() {
-  console.log('🔄 Gerando auto-loader...');
-  
-  const autoLoaderCode = `/*!
- * Influencer Tracker - Auto Loader v2.1.0
- * Detecta a plataforma e carrega o build apropriado (com ou sem IA)
- */
-
-(function() {
-  'use strict';
-  
-  const TRACKER_CDN = 'https://eybymarketplace.github.io/traffic-tracker/dist/';
-  
-  function detectPlatform() {
-    // Shopify
-    if (window.Shopify || window.shopifyData || 
-        document.querySelector('meta[name="shopify-checkout-api-token"]')) {
-      return 'shopify';
+function generateBundleFooter() {
+  return `
+    
+    // ===== AUTO-INITIALIZATION =====
+    
+    // Verificar dependências
+    const requiredModules = ['Config', 'Utils', 'Core'];
+    const missingModules = requiredModules.filter(module => 
+        !window.InfluencerTracker[module]
+    );
+    
+    if (missingModules.length > 0) {
+        console.error('Missing required modules:', missingModules);
+    } else {
+        // Criar instância principal
+        window.InfluencerTracker.instance = window.InfluencerTracker.Core;
+        
+        // Métodos de conveniência
+        window.InfluencerTracker.init = function(options) {
+            return window.InfluencerTracker.Core.init(options);
+        };
+        
+        window.InfluencerTracker.track = function(eventType, properties) {
+            return window.InfluencerTracker.Core.track(eventType, properties);
+        };
+        
+        window.InfluencerTracker.trackPurchase = function(orderData) {
+            return window.InfluencerTracker.Core.trackPurchase(orderData);
+        };
+        
+        window.InfluencerTracker.getInfo = function() {
+            return window.InfluencerTracker.Core.getInfo();
+        };
+        
+        // Auto-init se configurado via data attributes
+        const script = document.currentScript;
+        if (script && script.dataset.autoInit !== 'false') {
+            const config = {};
+            if (script.dataset.apiEndpoint) config.apiEndpoint = script.dataset.apiEndpoint;
+            if (script.dataset.projectId) config.projectId = script.dataset.projectId;
+            
+            if (Object.keys(config).length > 0) {
+                window.InfluencerTracker.init(config);
+            }
+        }
+        
+        console.log('🎯 Influencer Tracker v2.1.0 for Shopify loaded');
+        console.log('📦 Modules loaded:', ${BUILD_CONFIG.modules.length});
+        console.log('🛍️ Shopify integration: Ready');
+        console.log('🤖 AI analytics: Enabled');
     }
     
-    // WooCommerce
-    if (window.wc || window.woocommerce || 
-        document.querySelector('body.woocommerce')) {
-      return 'woocommerce';
-    }
-    
-    // Magento
-    if (window.Magento || window.checkout || 
-        document.querySelector('body.catalog-product-view')) {
-      return 'magento';
-    }
-    
-    // Vtex
-    if (window.vtex || window.vtexjs || 
-        document.querySelector('meta[name="vtex-version"]')) {
-      return 'vtex';
-    }
-    
-    // Nuvemshop
-    if (window.LS || document.querySelector('meta[name="nuvemshop"]')) {
-      return 'nuvemshop';
-    }
-    
-    return 'generic';
-  }
-  
-  function shouldLoadAI() {
-    // Verificar se IA está habilitada via query param ou config
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('tracker_ai') === 'false') return false;
-    if (urlParams.get('tracker_ai') === 'true') return true;
-    
-    // Verificar configuração global
-    if (window.InfluencerTrackerConfig?.enableAI === false) return false;
-    if (window.InfluencerTrackerConfig?.enableAI === true) return true;
-    
-    // Default: carregar IA (pode ser mudado para false se preferir)
-    return true;
-  }
-  
-  function loadTracker() {
-    const platform = detectPlatform();
-    const useAI = shouldLoadAI();
-    const script = document.createElement('script');
-    
-    // Escolher versão com ou sem IA
-    let scriptName = 'tracker-' + platform;
-    if (platform === 'shopify' && !useAI) {
-      scriptName = 'tracker-shopify-lite';
-    }
-    
-    script.src = TRACKER_CDN + scriptName + '.min.js';
-    script.async = true;
-    script.onload = function() {
-      const aiStatus = useAI ? 'com IA 🤖' : 'sem IA';
-      console.log(\`✅ Influencer Tracker carregado para: \${platform} (\${aiStatus})\`);
-      
-      // Carregar addon de IA separadamente se necessário
-      if (useAI && platform !== 'shopify') {
-        loadAIAddon();
-      }
-    };
-    script.onerror = function() {
-      console.warn('⚠️ Erro ao carregar tracker, tentando versão genérica...');
-      const fallbackScript = document.createElement('script');
-      fallbackScript.src = TRACKER_CDN + 'tracker-generic.min.js';
-      fallbackScript.async = true;
-      document.head.appendChild(fallbackScript);
-    };
-    
-    document.head.appendChild(script);
-  }
-  
-  function loadAIAddon() {
-    const aiScript = document.createElement('script');
-    aiScript.src = TRACKER_CDN + 'tracker-ai-addon.min.js';
-    aiScript.async = true;
-    aiScript.onload = function() {
-      console.log('🤖 Módulo de IA carregado separadamente');
-    };
-    document.head.appendChild(aiScript);
-  }
-  
-  // Carregar quando DOM estiver pronto
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', loadTracker);
-  } else {
-    loadTracker();
-  }
-  
-})();`;
-
-  const autoFile = path.join(__dirname, 'dist', 'tracker-auto.js');
-  fs.writeFileSync(autoFile, autoLoaderCode);
-  
-  // Minificar auto-loader
-  const minifyResult = await minify(autoLoaderCode, MINIFY_OPTIONS);
-  const autoMinFile = path.join(__dirname, 'dist', 'tracker-auto.min.js');
-  fs.writeFileSync(autoMinFile, minifyResult.code);
-  
-  console.log('   ✅ Auto-loader gerado');
+})(typeof window !== 'undefined' ? window : this, typeof document !== 'undefined' ? document : {});`;
 }
 
 function ensureDirectories() {
   const dirs = [
     'dist',
-    'src/core',
+    'src/modules',
     'src/adapters',
     'src/ai',
-    'src/utils',
     'docs'
   ];
   
@@ -383,111 +286,176 @@ function ensureDirectories() {
     const fullPath = path.join(__dirname, dir);
     if (!fs.existsSync(fullPath)) {
       fs.mkdirSync(fullPath, { recursive: true });
-      console.log(`📁 Criado diretório: ${dir}`);
+      console.log(`📁 Created directory: ${dir}`);
     }
   });
 }
 
-function generateBuildDocs(results) {
-  const docsContent = `# Influencer Tracker v2.1.0 - Builds Disponíveis
+function generateDocs(result) {
+  const docsContent = `# Influencer Tracker v2.1.0 for Shopify
 
-Gerado em: ${new Date().toISOString()}
+Built: ${new Date().toISOString()}
 
-## 📦 Builds Disponíveis
+## 📦 Build Information
 
-${results.map(result => {
-  const aiStatus = result.hasAI ? '🤖 **Com IA**' : '📊 Sem IA';
-  return `### ${result.name}
-- **Arquivo**: \`${result.output}.min.js\`
-- **Tamanho**: ${(result.minifiedSize / 1024).toFixed(1)} KB (minificado)
-- **Recursos**: ${aiStatus}
-- **Arquivos incluídos**: ${result.files.join(', ')}
-`;
-}).join('\n')}
+- **File**: \`${result.output}.min.js\`
+- **Size**: ${(result.minifiedSize / 1024).toFixed(1)} KB (minified)
+- **Modules**: ${result.modules.length} included
+- **Platform**: Shopify
+- **AI**: Enabled
 
-## 🚀 Como Usar
+## 🚀 Installation
 
-### Opção 1: Auto-loader (Recomendado)
+### CDN (Recommended)
 \`\`\`html
-<script src="https://eybymarketplace.github.io/traffic-tracker/dist/tracker-auto.min.js"></script>
+<script src="https://your-cdn.com/dist/influencer-tracker.min.js"></script>
 \`\`\`
 
-### Opção 2: Build Específico
+### With Configuration
 \`\`\`html
-<!-- Shopify com IA -->
-<script src="https://eybymarketplace.github.io/traffic-tracker/dist/tracker-shopify.min.js"></script>
-
-<!-- Shopify sem IA (mais leve) -->
-<script src="https://eybymarketplace.github.io/traffic-tracker/dist/tracker-shopify-lite.min.js"></script>
+<script 
+  src="https://your-cdn.com/dist/influencer-tracker.min.js"
+  data-api-endpoint="https://your-api.com/events"
+  data-project-id="your-project-id"
+  data-auto-init="true">
+</script>
 \`\`\`
 
-### Opção 3: Addon de IA Separado
+### Manual Configuration
 \`\`\`html
-<!-- Carregar tracker básico -->
-<script src="https://eybymarketplace.github.io/traffic-tracker/dist/tracker-shopify-lite.min.js"></script>
-<!-- Adicionar IA depois -->
-<script src="https://eybymarketplace.github.io/traffic-tracker/dist/tracker-ai-addon.min.js"></script>
+<script src="https://your-cdn.com/dist/influencer-tracker.min.js" data-auto-init="false"></script>
+<script>
+  InfluencerTracker.init({
+    apiEndpoint: 'https://your-api.com/events',
+    projectId: 'your-project-id',
+    enableConsentCheck: true,
+    debug: false
+  });
+</script>
 \`\`\`
 
-## ⚙️ Configuração
+## 🛍️ Shopify Features
+
+- **Native Integration**: Automatic Shopify detection and hooks
+- **Product Tracking**: Automatic product view and cart events
+- **Checkout Integration**: Purchase tracking with order details
+- **Theme Compatibility**: Works with any Shopify theme
+
+## 🤖 AI Features
+
+- **Behavioral Segmentation**: Automatic customer profiling
+- **Conversion Prediction**: Real-time conversion probability
+- **Journey Mapping**: Customer path analysis
+- **Engagement Scoring**: Quality metrics for each visitor
+
+## 📊 Usage Examples
+
+### Basic Tracking
+\`\`\`javascript
+// Custom event
+InfluencerTracker.track('video_watched', {
+  video_id: 'intro-video',
+  duration: 120,
+  completion_rate: 0.8
+});
+\`\`\`
+
+### Purchase Tracking
+\`\`\`javascript
+// Manual purchase tracking (if needed)
+InfluencerTracker.trackPurchase({
+  orderId: 'ORDER-123',
+  totalValue: 299.90,
+  currency: 'USD',
+  items: [
+    {
+      id: 'PROD-1',
+      name: 'Product Name',
+      price: 299.90,
+      quantity: 1,
+      category: 'Electronics'
+    }
+  ],
+  couponCode: 'SAVE10'
+});
+\`\`\`
+
+### Get Analytics Data
+\`\`\`javascript
+// Get current session info
+const info = InfluencerTracker.getInfo();
+console.log('User ID:', info.userId);
+console.log('Session ID:', info.sessionId);
+console.log('Has Attribution:', info.hasAttribution);
+\`\`\`
+
+## 🎯 Influencer Attribution
+
+The tracker automatically detects influencer attribution from:
+- URL parameters: \`?inf_id=123&campaign=summer\`
+- UTM parameters: \`?utm_source=influencer&utm_medium=social\`
+- Referrer detection: Instagram, TikTok, YouTube, etc.
+
+## ⚙️ Configuration Options
 
 \`\`\`javascript
-// Configurar antes de carregar o script
-window.InfluencerTrackerConfig = {
-  enableAI: true, // ou false para desabilitar IA
-  apiEndpoint: 'https://sua-api.com/events',
-  projectId: 'seu_projeto_id'
-};
+InfluencerTracker.init({
+  // Required
+  apiEndpoint: 'https://your-api.com/events',
+  projectId: 'your-project-id',
+  
+  // Optional
+  enableConsentCheck: true,    // GDPR/LGPD compliance
+  batchSize: 10,              // Events per batch
+  batchTimeout: 3000,         // Batch timeout (ms)
+  sessionTimeout: 1800000,    // Session timeout (30 min)
+  debug: false                // Debug mode
+});
 \`\`\`
 
-## 🤖 Recursos de IA
+## 📋 Modules Included
 
-Quando habilitada, a IA fornece:
-- Segmentação comportamental automática
-- Predição de probabilidade de conversão
-- Análise de qualidade de engajamento
-- Mapeamento da jornada do cliente
-- Métricas de performance de afiliados
+${result.modules.map(module => `- \`${module}\``).join('\n')}
+
+## 🔧 Build Details
+
+- **Original Size**: ${(result.originalSize / 1024).toFixed(1)} KB
+- **Minified Size**: ${(result.minifiedSize / 1024).toFixed(1)} KB
+- **Compression**: ${(((result.originalSize - result.minifiedSize) / result.originalSize) * 100).toFixed(1)}%
+- **Build Time**: ${result.buildTime}ms
 `;
 
-  const docsFile = path.join(__dirname, 'docs', 'builds.md');
+  const docsFile = path.join(__dirname, 'docs', 'README.md');
   fs.writeFileSync(docsFile, docsContent);
-  console.log('📚 Documentação gerada em docs/builds.md');
+  console.log('📚 Documentation generated in docs/README.md');
 }
 
-function generateReport(results) {
-  console.log('\n📊 RELATÓRIO DE BUILD v2.1.0');
-  console.log('='.repeat(60));
+function generateReport(result) {
+  console.log('\n📊 BUILD REPORT v2.1.0');
+  console.log('='.repeat(50));
   
-  let totalOriginal = 0;
-  let totalMinified = 0;
+  const reduction = ((result.originalSize - result.minifiedSize) / result.originalSize * 100).toFixed(1);
   
-  results.forEach(result => {
-    const reduction = ((result.originalSize - result.minifiedSize) / result.originalSize * 100).toFixed(1);
-    const aiIcon = result.hasAI ? '🤖' : '📊';
-    
-    console.log(`${(result.name + ' ' + aiIcon).padEnd(20)} | ${(result.originalSize / 1024).toFixed(1).padStart(6)} KB → ${(result.minifiedSize / 1024).toFixed(1).padStart(6)} KB | -${reduction}% | ${result.buildTime}ms`);
-    
-    totalOriginal += result.originalSize;
-    totalMinified += result.minifiedSize;
-  });
+  console.log(`Build: ${result.output}`);
+  console.log(`Platform: Shopify`);
+  console.log(`Modules: ${result.modules.length}`);
+  console.log(`Original: ${(result.originalSize / 1024).toFixed(1)} KB`);
+  console.log(`Minified: ${(result.minifiedSize / 1024).toFixed(1)} KB`);
+  console.log(`Reduction: ${reduction}%`);
+  console.log(`Build Time: ${result.buildTime}ms`);
   
-  console.log('-'.repeat(60));
+  console.log('\n📦 Files generated:');
+  console.log(`   • dist/${result.output}.js (development)`);
+  console.log(`   • dist/${result.output}.min.js (production)`);
+  console.log(`   • docs/README.md (documentation)`);
   
-  const totalReduction = ((totalOriginal - totalMinified) / totalOriginal * 100).toFixed(1);
-  console.log(`TOTAL                | ${(totalOriginal / 1024).toFixed(1).padStart(6)} KB → ${(totalMinified / 1024).toFixed(1).padStart(6)} KB | -${totalReduction}%`);
+  console.log('\n✅ Build completed successfully!\n');
   
-  console.log('\n📦 Arquivos gerados em ./dist/');
-  console.log('📚 Documentação em ./docs/');
-  console.log('✅ Build concluído com sucesso!\n');
-  
-  // Mostrar recomendações
-  console.log('💡 RECOMENDAÇÕES:');
-  console.log('   • Use tracker-auto.min.js para detecção automática');
-  console.log('   • Use tracker-shopify-lite.min.js se não precisar de IA');
-  console.log('   • Use tracker-ai-addon.min.js para adicionar IA posteriormente');
-  console.log('   • Configure enableAI: false para desabilitar IA globalmente\n');
+  console.log('💡 USAGE:');
+  console.log('   • Add to Shopify theme: <script src="influencer-tracker.min.js"></script>');
+  console.log('   • Configure via data attributes or manual init');
+  console.log('   • All features included: tracking + AI + Shopify integration\n');
 }
 
-// Executar build
+// Execute build
 buildScript();
