@@ -132,12 +132,8 @@
                 platform: this.platform,
                 properties: Utils.deepMerge({}, properties)
             };
-            
-            // Enriquecer com dados específicos da plataforma
-            if (this.adapter && this.adapter.enrichEvent) {
-                const enrichedProps = this.adapter.enrichEvent(eventType, properties);
-                event.properties = Utils.deepMerge(event.properties, enrichedProps);
-            }
+
+            console.log('📊 Evento rastreado:', eventType, properties);
             
             EventQueue.add(event);
         },

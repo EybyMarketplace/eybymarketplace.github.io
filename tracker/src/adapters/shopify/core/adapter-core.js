@@ -28,18 +28,16 @@
                 }
             });
 
-            console.log('🔄 AdapterCore: ', this);
-
             this.initialized = true;
             console.log('✅ Shopify Adapter Core inicializado');
         },
 
         track: function (eventType, properties = {}) {
             // Use the main tracker
-            if (window.CommerceTracker && window.CommerceTracker.track) {
-                window.CommerceTracker.track(eventType, properties);
+            if (window.CommerceTracker && window.CommerceTracker.Core.track) {
+                window.CommerceTracker.Core.track(eventType, properties);
             } else {
-                console.log('📊 Evento rastreado:', eventType, properties);
+                console.warn('⚠️ Evento rastreado mas não enviado:', eventType, properties);
             }
         }
     };

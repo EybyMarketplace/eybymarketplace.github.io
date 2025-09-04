@@ -34,9 +34,6 @@ class ShopifyAdapterBuilder {
             'src/core/modules/device-fingerprint.js',
             'src/core/modules/event-queue.js',
 
-            // Tracker core
-            'src/core/tracker-core.js',
-
             // Shopify Utilities
             'src/adapters/shopify/utils/data-extractors.js',
             'src/adapters/shopify/utils/session-manager.js',
@@ -62,7 +59,11 @@ class ShopifyAdapterBuilder {
             // 'src/ai/ai-data-collector.js',
 
             // Main entry point (MUST BE LAST)
-            'src/adapters/shopify/shopify-adapter.js'
+            'src/adapters/shopify/shopify-adapter.js',
+
+            // Tracker core
+            'src/core/tracker-core.js',
+
         ];
 
         this.processedFiles = [];

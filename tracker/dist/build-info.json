@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "buildDate": "2025-09-04T19:02:19.808Z",
+  "buildDate": "2025-09-04T19:26:59.300Z",
   "files": [
     "src/utils/utils.js",
     "src/core/modules/config.js",
@@ -9,7 +9,6 @@
     "src/core/modules/influencer-detector.js",
     "src/core/modules/device-fingerprint.js",
     "src/core/modules/event-queue.js",
-    "src/core/tracker-core.js",
     "src/adapters/shopify/utils/data-extractors.js",
     "src/adapters/shopify/utils/session-manager.js",
     "src/adapters/shopify/core/state-manager.js",
@@ -21,10 +20,11 @@
     "src/adapters/shopify/behavioral/interaction-tracker.js",
     "src/adapters/shopify/checkout/form-monitor.js",
     "src/adapters/shopify/checkout/abandonment-tracker.js",
-    "src/adapters/shopify/shopify-adapter.js"
+    "src/adapters/shopify/shopify-adapter.js",
+    "src/core/tracker-core.js"
   ],
   "sizes": {
-    "debug": 105679,
-    "minified": 64781
+    "debug": 105730,
+    "minified": 64832
   }
 }
