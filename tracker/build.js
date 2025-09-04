@@ -28,11 +28,11 @@ class ShopifyAdapterBuilder {
             'src/modules/config.js',
 
             // Core modules
-            'src/modules/consent-manager.js',
-            'src/modules/id-generator.js',
-            'src/modules/influencer-detector.js',
-            'src/modules/device-fingerprint.js',
-            'src/modules/event-queue.js',
+            'src/core/modules/consent-manager.js',
+            'src/core/modules/id-generator.js',
+            'src/core/modules/influencer-detector.js',
+            'src/core/modules/device-fingerprint.js',
+            'src/core/modules/event-queue.js',
 
             // Tracker core
             'src/core/tracker-core.js',
