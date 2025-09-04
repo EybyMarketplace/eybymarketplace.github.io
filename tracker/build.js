@@ -39,7 +39,6 @@ class ShopifyAdapterBuilder {
 
             // Shopify Utilities
             'src/adapters/shopify/utils/data-extractors.js',
-            'src/adapters/shopify/utils/helpers.js',
             'src/adapters/shopify/utils/session-manager.js',
 
             // Shopify adapter core

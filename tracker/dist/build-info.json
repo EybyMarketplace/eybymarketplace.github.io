@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "buildDate": "2025-09-04T15:17:39.663Z",
+  "buildDate": "2025-09-04T15:30:09.540Z",
   "files": [
     "src/utils/utils.js",
     "src/modules/config.js",
@@ -11,7 +11,6 @@
     "src/modules/event-queue.js",
     "src/core/tracker-core.js",
     "src/adapters/shopify/utils/data-extractors.js",
-    "src/adapters/shopify/utils/helpers.js",
     "src/adapters/shopify/utils/session-manager.js",
     "src/adapters/shopify/core/state-manager.js",
     "src/adapters/shopify/core/adapter-core.js",
@@ -25,7 +24,7 @@
     "src/adapters/shopify/shopify-adapter.js"
   ],
   "sizes": {
-    "debug": 112790,
-    "minified": 69354
+    "debug": 106110,
+    "minified": 65148
   }
 }
