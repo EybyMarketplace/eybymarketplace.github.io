@@ -2853,20 +2853,28 @@
             this.formInteractions[currentStep][fieldName] = interactionData;
         },
 
-        throttledTrackInput: (() => {
-            const throttleMap = new Map();
+        // Método corrigido com bind apropriado
+        throttledTrackInput: function (element, interactionData) {
+            const fieldName = interactionData.field_name;
+            
+            // Usar uma propriedade da instância para armazenar os timeouts
+            if (!this.throttleMap) {
+                this.throttleMap = new Map();
+            }
 
-            return function (element, interactionData) {
-                const fieldName = interactionData.field_name;
+            if (this.throttleMap.has(fieldName)) {
+                clearTimeout(this.throttleMap.get(fieldName));
+            }
 
-                if (throttleMap.has(fieldName)) {
-                    clearTimeout(throttleMap.get(fieldName));
-                }
+            // Armazenar referência do contexto
+            const self = this;
 
-                throttleMap.set(fieldName, setTimeout(() => {
-                    this.core.track('checkout_field_input', {
-                        checkout_id: this.getCheckoutId(),
-                        step: this.getCurrentStep(),
+            this.throttleMap.set(fieldName, setTimeout(function() {
+                // Verificar se core ainda existe antes de usar
+                if (self.core && typeof self.core.track === 'function') {
+                    self.core.track('checkout_field_input', {
+                        checkout_id: self.getCheckoutId(),
+                        step: self.getCurrentStep(),
                         field_name: fieldName,
                         field_type: interactionData.field_type,
                         input_count: interactionData.input_count,
@@ -2875,13 +2883,16 @@
                         value_length: element.value?.length || 0,
                         timestamp: Date.now()
                     });
+                } else {
+                    console.warn('FormMonitor: core.track não está disponível');
+                }
 
-                    throttleMap.delete(fieldName);
-                }, 1000));
-            }.bind(this);
-        })()
+                self.throttleMap.delete(fieldName);
+            }, 1000));
+        }
     };
-    console.log('📝 FormMonitor module loaded');
+    
+    console.log('�� FormMonitor module loaded');
 })(window);
 
 
