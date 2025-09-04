@@ -1,5 +1,5 @@
 /*!
- * Influencer Tracker v2.1.0
+ * Commerce Tracker v2.1.0
  * Shopify Adapter - Complete Build
  * Built: 2025-09-04
  * 
@@ -2814,12 +2814,6 @@
             };
 
             console.log('📊 Evento rastreado:', eventType, properties);
-            
-            // Enriquecer com dados específicos da plataforma
-            if (this.adapter && this.adapter.enrichEvent) {
-                const enrichedProps = this.adapter.enrichEvent(eventType, properties);
-                event.properties = Utils.deepMerge(event.properties, enrichedProps);
-            }
             
             EventQueue.add(event);
         },

@@ -14,7 +14,7 @@ class ShopifyAdapterBuilder {
         // Initialize config first without banner
         this.config = {
             version: '2.1.0',
-            projectName: 'Influencer Tracker',
+            projectName: 'Commerce Tracker',
             outputDir: './dist',
             debugDir: './dist/debug'
         };
@@ -160,7 +160,7 @@ class ShopifyAdapterBuilder {
             content = fileComment + content;
 
             // Wrap modules in namespace protection (except main entry point)
-            if (!filePath.includes('shopify-adapter.js')) {
+            if (!filePath.includes('commerce-tracker.js')) {
                 content = this.wrapInNamespace(content, filePath);
             }
 
@@ -253,14 +253,14 @@ class ShopifyAdapterBuilder {
             }
 
             // Generate debug version (unminified)
-            const debugPath = path.join(this.config.outputDir, 'shopify-adapter-debug.js');
+            const debugPath = path.join(this.config.outputDir, 'commerce-tracker-debug.js');
             fs.writeFileSync(debugPath, combinedCode, 'utf8');
             this.log(`Debug build saved: ${debugPath}`, 'success');
 
             // Generate production version (minified)
             this.log('📦 Minifying code...');
             const minifiedCode = this.minifyCode(combinedCode);
-            const prodPath = path.join(this.config.outputDir, 'shopify-adapter.min.js');
+            const prodPath = path.join(this.config.outputDir, 'commerce-tracker.min.js');
             fs.writeFileSync(prodPath, minifiedCode, 'utf8');
 
             // Generate build info
