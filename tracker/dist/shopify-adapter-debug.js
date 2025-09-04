@@ -1660,7 +1660,7 @@
     window.ShopifyAdapterModules.CartTracker = {
         init: function (core) {
             this.core = core;
-            this.stateManager = core.stateManager;
+            this.stateManager = window.ShopifyAdapterModules.StateManager;
             this.setupCartTracking();
         },
 
@@ -1985,238 +1985,6 @@
 })(window);
 
 
-/* === src/adapters/shopify/ecommerce/api-interceptor.js === */
-/*!
- * API Interceptor Module
- */
-
-(function (window) {
-    'use strict';
-
-    window.ShopifyAdapterModules = window.ShopifyAdapterModules || {};
-
-    window.ShopifyAdapterModules.APIInterceptor = {
-        init: function (core) {
-            this.core = core;
-            this.cartTracker = core.cartTracker;
-            this.productTracker = core.productTracker;
-            this.checkoutTracker = core.checkoutTracker;
-            this.interceptAPIs();
-        },
-
-        interceptAPIs: function () {
-            console.log('🔌 Configurando interceptação de APIs');
-            this.interceptFetch();
-            this.interceptXHR();
-        },
-
-        interceptFetch: function () {
-            const self = this;
-            const originalFetch = window.fetch;
-
-            window.fetch = async function (...args) {
-                const response = await originalFetch.apply(this, args);
-
-                if (response.ok) {
-                    const url = typeof args[0] === 'string' ? args[0] : args[0].url;
-
-                    try {
-                        if (url.includes('/cart')) {
-                            const clonedResponse = response.clone();
-
-                            if (url.includes('/cart/add')) {
-                                const data = await clonedResponse.json();
-                                self.cartTracker.handleCartAdd(data, url);
-                            } else if (url.includes('/cart/update') || url.includes('/cart/change')) {
-                                const data = await clonedResponse.json();
-                                self.cartTracker.handleCartUpdate(data, url);
-                            } else if (url.includes('/cart/clear')) {
-                                self.cartTracker.handleCartClear(url);
-                            } else if (url.includes('/cart.js') || url.endsWith('/cart')) {
-                                const data = await clonedResponse.json();
-                                self.cartTracker.handleCartData(data, url);
-                            }
-                        }
-
-                        if (url.includes('/products/') && url.includes('.js')) {
-                            const data = await clonedResponse.json();
-                            self.productTracker.handleProductData(data, url);
-                        }
-
-                        if (url.includes('/checkout') || url.includes('/orders')) {
-                            const contentType = response.headers.get('content-type');
-                            if (contentType && contentType.includes('application/json')) {
-                                const data = await clonedResponse.json();
-                                self.checkoutTracker.handleCheckoutData(data, url);
-                            }
-                        }
-
-                    } catch (e) {
-                        console.log('🔄 Erro ao processar resposta:', e);
-                    }
-                }
-
-                return response;
-            };
-        },
-
-        interceptXHR: function () {
-            const self = this;
-            const originalOpen = XMLHttpRequest.prototype.open;
-
-            XMLHttpRequest.prototype.open = function (method, url, ...rest) {
-                if (url.includes('/cart')) {
-                    this.addEventListener('load', function () {
-                        if (this.status >= 200 && this.status < 300) {
-                            try {
-                                const data = JSON.parse(this.responseText);
-
-                                if (url.includes('/cart/add')) {
-                                    self.cartTracker.handleCartAdd(data, url);
-                                } else if (url.includes('/cart/update') || url.includes('/cart/change')) {
-                                    self.cartTracker.handleCartUpdate(data, url);
-                                } else if (url.includes('/cart.js')) {
-                                    self.cartTracker.handleCartData(data, url);
-                                }
-                            } catch (e) {
-                                // Não é JSON válido
-                            }
-                        }
-                    });
-                }
-
-                return originalOpen.apply(this, [method, url, ...rest]);
-            };
-
-            console.log('✅ Interceptação de APIs configurada');
-        }
-    };
-
-    console.log('🔌 API Interceptor module loaded');
-
-})(window);
-
-
-/* === src/adapters/shopify/behavioral/interaction-tracker.js === */
-/*!
- * Interaction Tracking Module
- */
-(function (window) {
-    'use strict';
-
-    window.ShopifyAdapterModules = window.ShopifyAdapterModules || {};
-
-    window.ShopifyAdapterModules.InteractionTracker = {
-        init: function (core) {
-            this.core = core;
-            this.setupInteractionTracking();
-        },
-
-        setupInteractionTracking: function () {
-            console.log('👆 Configurando tracking de interações');
-            this.trackClickBehavior();
-            this.trackFormInteractions();
-            this.trackPageVisibility();
-        },
-
-        trackClickBehavior: function () {
-            document.addEventListener('click', window.InfluencerTracker.Utils.throttle((e) => {
-                const element = e.target;
-
-                let clickType = 'generic';
-
-                if (element.matches('a[href*="/products/"]')) {
-                    clickType = 'product_link';
-                } else if (element.matches('button[name="add"], input[name="add"]')) {
-                    clickType = 'add_to_cart_button';
-                } else if (element.matches('a[href*="/cart"], button[data-cart]')) {
-                    clickType = 'cart_link';
-                } else if (element.matches('a[href*="/checkout"]')) {
-                    clickType = 'checkout_link';
-                }
-
-                const clickData = {
-                    click_type: clickType,
-                    element_tag: element.tagName,
-                    element_class: element.className,
-                    element_id: element.id,
-                    element_text: element.textContent?.substring(0, 100),
-                    href: element.href,
-                    position_x: e.clientX,
-                    position_y: e.clientY,
-                    timestamp: Date.now()
-                };
-
-                this.core.track('click_event', clickData);
-                this.saveInteraction({
-                    type: 'click',
-                    ...clickData
-                });
-            }, 500));
-        },
-
-        trackFormInteractions: function () {
-            document.addEventListener('submit', (e) => {
-                const form = e.target;
-
-                let formType = 'generic';
-                if (form.action && form.action.includes('/cart/add')) {
-                    formType = 'add_to_cart';
-                } else if (form.action && form.action.includes('/contact')) {
-                    formType = 'contact';
-                } else if (form.querySelector('input[type="email"]')) {
-                    formType = 'newsletter';
-                }
-
-                this.core.track('form_submit', {
-                    form_type: formType,
-                    form_action: form.action,
-                    form_method: form.method,
-                    fields_count: form.elements.length,
-                    timestamp: Date.now()
-                });
-            });
-        },
-
-        trackPageVisibility: function () {
-            document.addEventListener('visibilitychange', () => {
-                this.core.track('page_visibility_change', {
-                    is_visible: !document.hidden,
-                    time_on_page: Date.now() - this.core.startTime,
-                    timestamp: Date.now()
-                });
-            });
-        },
-
-        saveInteraction: function (interactionData) {
-            try {
-                const interactions = this.getInteractionHistory();
-                interactions.push({
-                    timestamp: Date.now(),
-                    page: window.location.href,
-                    ...interactionData
-                });
-
-                sessionStorage.setItem('interaction_history', JSON.stringify(interactions.slice(-200)));
-            } catch (e) {
-                console.log('Erro ao salvar interação:', e);
-            }
-        },
-
-        getInteractionHistory: function () {
-            try {
-                return JSON.parse(sessionStorage.getItem('interaction_history') || '[]');
-            } catch (e) {
-                return [];
-            }
-        }
-    };
-
-    console.log('🔒 InteractionTracker module loaded');
-
-})(window);
-
-
 /* === src/adapters/shopify/checkout/checkout-tracker.js === */
 /*!
  * Checkout Tracking Module
@@ -2237,8 +2005,8 @@
 
         init: function (core) {
             this.core = core;
-            this.sessionManager = core.sessionManager;
-            this.dataExtractors = core.dataExtractors;
+            this.sessionManager = window.ShopifyAdapterModules.SessionManager;
+            this.dataExtractors = window.ShopifyAdapterModules.DataExtractors;
             this.setupCheckoutTracking();
             this.isInitialized = true;
         },
@@ -2304,7 +2072,7 @@
 
         isCheckoutButton: function (element) {
             const text = element.textContent?.toLowerCase() || '';
-            const classes = element.className?.toLowerCase() || '';
+            const classes = (element.className?.baseVal ?? element.className)?.toLowerCase() || '';
             const id = element.id?.toLowerCase() || '';
 
             const checkoutKeywords = ['checkout', 'finalizar', 'comprar', 'buy now', 'purchase'];
@@ -2682,6 +2450,238 @@
 })(window);
 
 
+/* === src/adapters/shopify/ecommerce/api-interceptor.js === */
+/*!
+ * API Interceptor Module
+ */
+
+(function (window) {
+    'use strict';
+
+    window.ShopifyAdapterModules = window.ShopifyAdapterModules || {};
+
+    window.ShopifyAdapterModules.APIInterceptor = {
+        init: function (core) {
+            this.core = core;
+            this.cartTracker = window.ShopifyAdapterModules.CartTracker;
+            this.productTracker = window.ShopifyAdapterModules.ProductTracker;
+            this.checkoutTracker = window.ShopifyAdapterModules.CheckoutTracker;
+            this.interceptAPIs();
+        },
+
+        interceptAPIs: function () {
+            console.log('🔌 Configurando interceptação de APIs');
+            this.interceptFetch();
+            this.interceptXHR();
+        },
+
+        interceptFetch: function () {
+            const self = this;
+            const originalFetch = window.fetch;
+
+            window.fetch = async function (...args) {
+                const response = await originalFetch.apply(this, args);
+
+                if (response.ok) {
+                    const url = typeof args[0] === 'string' ? args[0] : args[0].url;
+
+                    try {
+                        if (url.includes('/cart')) {
+                            const clonedResponse = response.clone();
+
+                            if (url.includes('/cart/add')) {
+                                const data = await clonedResponse.json();
+                                self.cartTracker.handleCartAdd(data, url);
+                            } else if (url.includes('/cart/update') || url.includes('/cart/change')) {
+                                const data = await clonedResponse.json();
+                                self.cartTracker.handleCartUpdate(data, url);
+                            } else if (url.includes('/cart/clear')) {
+                                self.cartTracker.handleCartClear(url);
+                            } else if (url.includes('/cart.js') || url.endsWith('/cart')) {
+                                const data = await clonedResponse.json();
+                                self.cartTracker.handleCartData(data, url);
+                            }
+                        }
+
+                        if (url.includes('/products/') && url.includes('.js')) {
+                            const data = await clonedResponse.json();
+                            self.productTracker.handleProductData(data, url);
+                        }
+
+                        if (url.includes('/checkout') || url.includes('/orders')) {
+                            const contentType = response.headers.get('content-type');
+                            if (contentType && contentType.includes('application/json')) {
+                                const data = await clonedResponse.json();
+                                self.checkoutTracker.handleCheckoutData(data, url);
+                            }
+                        }
+
+                    } catch (e) {
+                        console.log('🔄 Erro ao processar resposta:', e);
+                    }
+                }
+
+                return response;
+            };
+        },
+
+        interceptXHR: function () {
+            const self = this;
+            const originalOpen = XMLHttpRequest.prototype.open;
+
+            XMLHttpRequest.prototype.open = function (method, url, ...rest) {
+                if (url.includes('/cart')) {
+                    this.addEventListener('load', function () {
+                        if (this.status >= 200 && this.status < 300) {
+                            try {
+                                const data = JSON.parse(this.responseText);
+
+                                if (url.includes('/cart/add')) {
+                                    self.cartTracker.handleCartAdd(data, url);
+                                } else if (url.includes('/cart/update') || url.includes('/cart/change')) {
+                                    self.cartTracker.handleCartUpdate(data, url);
+                                } else if (url.includes('/cart.js')) {
+                                    self.cartTracker.handleCartData(data, url);
+                                }
+                            } catch (e) {
+                                // Não é JSON válido
+                            }
+                        }
+                    });
+                }
+
+                return originalOpen.apply(this, [method, url, ...rest]);
+            };
+
+            console.log('✅ Interceptação de APIs configurada');
+        }
+    };
+
+    console.log('🔌 API Interceptor module loaded');
+
+})(window);
+
+
+/* === src/adapters/shopify/behavioral/interaction-tracker.js === */
+/*!
+ * Interaction Tracking Module
+ */
+(function (window) {
+    'use strict';
+
+    window.ShopifyAdapterModules = window.ShopifyAdapterModules || {};
+
+    window.ShopifyAdapterModules.InteractionTracker = {
+        init: function (core) {
+            this.core = core;
+            this.setupInteractionTracking();
+        },
+
+        setupInteractionTracking: function () {
+            console.log('👆 Configurando tracking de interações');
+            this.trackClickBehavior();
+            this.trackFormInteractions();
+            this.trackPageVisibility();
+        },
+
+        trackClickBehavior: function () {
+            document.addEventListener('click', window.InfluencerTracker.Utils.throttle((e) => {
+                const element = e.target;
+
+                let clickType = 'generic';
+
+                if (element.matches('a[href*="/products/"]')) {
+                    clickType = 'product_link';
+                } else if (element.matches('button[name="add"], input[name="add"]')) {
+                    clickType = 'add_to_cart_button';
+                } else if (element.matches('a[href*="/cart"], button[data-cart]')) {
+                    clickType = 'cart_link';
+                } else if (element.matches('a[href*="/checkout"]')) {
+                    clickType = 'checkout_link';
+                }
+
+                const clickData = {
+                    click_type: clickType,
+                    element_tag: element.tagName,
+                    element_class: element.className,
+                    element_id: element.id,
+                    element_text: element.textContent?.substring(0, 100),
+                    href: element.href,
+                    position_x: e.clientX,
+                    position_y: e.clientY,
+                    timestamp: Date.now()
+                };
+
+                this.core.track('click_event', clickData);
+                this.saveInteraction({
+                    type: 'click',
+                    ...clickData
+                });
+            }, 500));
+        },
+
+        trackFormInteractions: function () {
+            document.addEventListener('submit', (e) => {
+                const form = e.target;
+
+                let formType = 'generic';
+                if (form.action && form.action.includes('/cart/add')) {
+                    formType = 'add_to_cart';
+                } else if (form.action && form.action.includes('/contact')) {
+                    formType = 'contact';
+                } else if (form.querySelector('input[type="email"]')) {
+                    formType = 'newsletter';
+                }
+
+                this.core.track('form_submit', {
+                    form_type: formType,
+                    form_action: form.action,
+                    form_method: form.method,
+                    fields_count: form.elements.length,
+                    timestamp: Date.now()
+                });
+            });
+        },
+
+        trackPageVisibility: function () {
+            document.addEventListener('visibilitychange', () => {
+                this.core.track('page_visibility_change', {
+                    is_visible: !document.hidden,
+                    time_on_page: Date.now() - this.core.startTime,
+                    timestamp: Date.now()
+                });
+            });
+        },
+
+        saveInteraction: function (interactionData) {
+            try {
+                const interactions = this.getInteractionHistory();
+                interactions.push({
+                    timestamp: Date.now(),
+                    page: window.location.href,
+                    ...interactionData
+                });
+
+                sessionStorage.setItem('interaction_history', JSON.stringify(interactions.slice(-200)));
+            } catch (e) {
+                console.log('Erro ao salvar interação:', e);
+            }
+        },
+
+        getInteractionHistory: function () {
+            try {
+                return JSON.parse(sessionStorage.getItem('interaction_history') || '[]');
+            } catch (e) {
+                return [];
+            }
+        }
+    };
+
+    console.log('🔒 InteractionTracker module loaded');
+
+})(window);
+
+
 /* === src/adapters/shopify/checkout/form-monitor.js === */
 /*!
  * Form Monitor Module for Checkout
@@ -2697,7 +2697,7 @@
 
         init: function (core) {
             this.core = core;
-            this.checkoutTracker = core.checkoutTracker;
+            this.checkoutTracker = window.ShopifyAdapterModules.CheckoutTracker;
             
             // Aguardar a inicialização do checkoutTracker
             if (this.checkoutTracker && this.checkoutTracker.isInitialized) {

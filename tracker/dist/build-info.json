@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "buildDate": "2025-09-04T14:49:06.781Z",
+  "buildDate": "2025-09-04T15:09:05.137Z",
   "files": [
     "src/utils/utils.js",
     "src/modules/config.js",
@@ -17,15 +17,15 @@
     "src/adapters/shopify/core/adapter-core.js",
     "src/adapters/shopify/ecommerce/cart-tracker.js",
     "src/adapters/shopify/ecommerce/product-tracker.js",
+    "src/adapters/shopify/checkout/checkout-tracker.js",
     "src/adapters/shopify/ecommerce/api-interceptor.js",
     "src/adapters/shopify/behavioral/interaction-tracker.js",
-    "src/adapters/shopify/checkout/checkout-tracker.js",
     "src/adapters/shopify/checkout/form-monitor.js",
     "src/adapters/shopify/checkout/abandonment-tracker.js",
     "src/adapters/shopify/shopify-adapter.js"
   ],
   "sizes": {
-    "debug": 112105,
-    "minified": 68984
+    "debug": 112305,
+    "minified": 69184
   }
 }

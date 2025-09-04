@@ -17,8 +17,8 @@
 
         init: function (core) {
             this.core = core;
-            this.sessionManager = core.sessionManager;
-            this.dataExtractors = core.dataExtractors;
+            this.sessionManager = window.ShopifyAdapterModules.SessionManager;
+            this.dataExtractors = window.ShopifyAdapterModules.DataExtractors;
             this.setupCheckoutTracking();
             this.isInitialized = true;
         },
@@ -84,7 +84,7 @@
 
         isCheckoutButton: function (element) {
             const text = element.textContent?.toLowerCase() || '';
-            const classes = element.className?.toLowerCase() || '';
+            const classes = (element.className?.baseVal ?? element.className)?.toLowerCase() || '';
             const id = element.id?.toLowerCase() || '';
 
             const checkoutKeywords = ['checkout', 'finalizar', 'comprar', 'buy now', 'purchase'];

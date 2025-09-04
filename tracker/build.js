@@ -49,13 +49,13 @@ class ShopifyAdapterBuilder {
             // E-commerce tracking
             'src/adapters/shopify/ecommerce/cart-tracker.js',
             'src/adapters/shopify/ecommerce/product-tracker.js',
+            'src/adapters/shopify/checkout/checkout-tracker.js',
             'src/adapters/shopify/ecommerce/api-interceptor.js',
 
             // Behavioral tracking
             'src/adapters/shopify/behavioral/interaction-tracker.js',
 
             // Checkout tracking
-            'src/adapters/shopify/checkout/checkout-tracker.js',
             'src/adapters/shopify/checkout/form-monitor.js',
             'src/adapters/shopify/checkout/abandonment-tracker.js',
 

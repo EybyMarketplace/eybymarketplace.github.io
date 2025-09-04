@@ -10,7 +10,7 @@
     window.ShopifyAdapterModules.CartTracker = {
         init: function (core) {
             this.core = core;
-            this.stateManager = core.stateManager;
+            this.stateManager = window.ShopifyAdapterModules.StateManager;
             this.setupCartTracking();
         },
 

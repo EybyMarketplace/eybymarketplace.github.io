@@ -12,7 +12,7 @@
 
         init: function (core) {
             this.core = core;
-            this.checkoutTracker = core.checkoutTracker;
+            this.checkoutTracker = window.ShopifyAdapterModules.CheckoutTracker;
             
             // Aguardar a inicialização do checkoutTracker
             if (this.checkoutTracker && this.checkoutTracker.isInitialized) {

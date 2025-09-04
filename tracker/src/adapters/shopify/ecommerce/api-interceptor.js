@@ -10,9 +10,9 @@
     window.ShopifyAdapterModules.APIInterceptor = {
         init: function (core) {
             this.core = core;
-            this.cartTracker = core.cartTracker;
-            this.productTracker = core.productTracker;
-            this.checkoutTracker = core.checkoutTracker;
+            this.cartTracker = window.ShopifyAdapterModules.CartTracker;
+            this.productTracker = window.ShopifyAdapterModules.ProductTracker;
+            this.checkoutTracker = window.ShopifyAdapterModules.CheckoutTracker;
             this.interceptAPIs();
         },
 
