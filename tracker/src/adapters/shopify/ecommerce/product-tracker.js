@@ -10,7 +10,7 @@
     window.ShopifyAdapterModules.ProductTracker = {
         init: function (core) {
             this.core = core;
-            this.dataExtractors = core.dataExtractors;
+            this.dataExtractors = window.ShopifyAdapterModules.DataExtractors;
             this.setupProductTracking();
         },
 

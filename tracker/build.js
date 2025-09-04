@@ -37,6 +37,11 @@ class ShopifyAdapterBuilder {
             // Tracker core
             'src/core/tracker-core.js',
 
+            // Shopify Utilities
+            'src/adapters/shopify/utils/data-extractors.js',
+            'src/adapters/shopify/utils/helpers.js',
+            'src/adapters/shopify/utils/session-manager.js',
+
             // Shopify adapter core
             'src/adapters/shopify/core/state-manager.js',
             'src/adapters/shopify/core/adapter-core.js',
@@ -55,11 +60,6 @@ class ShopifyAdapterBuilder {
             'src/adapters/shopify/checkout/checkout-tracker.js',
             'src/adapters/shopify/checkout/form-monitor.js',
             'src/adapters/shopify/checkout/abandonment-tracker.js',
-
-            // Utilities
-            'src/adapters/shopify/utils/data-extractors.js',
-            'src/adapters/shopify/utils/helpers.js',
-            'src/adapters/shopify/utils/session-manager.js',
 
             // AI components
             // 'src/ai/ai-data-collector.js',

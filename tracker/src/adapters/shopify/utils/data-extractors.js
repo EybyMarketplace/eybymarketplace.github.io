@@ -8,10 +8,6 @@
     window.ShopifyAdapterModules = window.ShopifyAdapterModules || {};
 
     window.ShopifyAdapterModules.DataExtractors = {
-        init: function (core) {
-            this.core = core;
-        },
-
         extractProductData: function () {
             const productData = {};
 

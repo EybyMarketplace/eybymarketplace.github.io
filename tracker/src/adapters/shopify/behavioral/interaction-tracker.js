@@ -21,7 +21,7 @@
         },
 
         trackClickBehavior: function () {
-            document.addEventListener('click', this.core.throttle((e) => {
+            document.addEventListener('click', window.InfluencerTracker.Utils.throttle((e) => {
                 const element = e.target;
 
                 let clickType = 'generic';

@@ -8,10 +8,6 @@
     window.ShopifyAdapterModules = window.ShopifyAdapterModules || {};
 
     window.ShopifyAdapterModules.Helpers = {
-        init: function (core) {
-            this.core = core;
-        },
-
         throttle: function (func, limit) {
             let inThrottle;
             return function () {

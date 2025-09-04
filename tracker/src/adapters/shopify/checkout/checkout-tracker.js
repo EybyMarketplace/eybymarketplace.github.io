@@ -8,6 +8,7 @@
     window.ShopifyAdapterModules = window.ShopifyAdapterModules || {};
 
     window.ShopifyAdapterModules.CheckoutTracker = {
+        isInitialized: false,
         checkoutStartTime: null,
         checkoutSteps: [],
         currentStep: null,
@@ -19,6 +20,7 @@
             this.sessionManager = core.sessionManager;
             this.dataExtractors = core.dataExtractors;
             this.setupCheckoutTracking();
+            this.isInitialized = true;
         },
 
         setupCheckoutTracking: function () {

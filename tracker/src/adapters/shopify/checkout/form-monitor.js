@@ -13,7 +13,21 @@
         init: function (core) {
             this.core = core;
             this.checkoutTracker = core.checkoutTracker;
-            this.setupFormMonitoring();
+            
+            // Aguardar a inicialização do checkoutTracker
+            if (this.checkoutTracker && this.checkoutTracker.isInitialized) {
+                this.setupFormMonitoring();
+            } else {
+                // Aguardar a inicialização
+                const checkInit = () => {
+                    if (this.checkoutTracker && this.checkoutTracker.isInitialized) {
+                        this.setupFormMonitoring();
+                    } else {
+                        setTimeout(checkInit, 100);
+                    }
+                };
+                checkInit();
+            }
         },
 
         setupFormMonitoring: function () {
@@ -36,6 +50,14 @@
             });
 
             observer.observe(document.body, { childList: true, subtree: true });
+        },
+
+        getCurrentStep: function() {
+            return this.checkoutTracker?.currentStep || 'unknown';
+        },
+
+        getCheckoutId: function() {
+            return this.checkoutTracker?.checkoutSessionData?.checkout_id || 'unknown';
         },
 
         setupFieldMonitoring: function (element) {
@@ -63,8 +85,8 @@
                 interactionData.focus_start = Date.now();
 
                 this.core.track('checkout_field_focus', {
-                    checkout_id: this.checkoutTracker.checkoutSessionData.checkout_id,
-                    step: this.checkoutTracker.currentStep,
+                    checkout_id: this.getCheckoutId(),
+                    step: this.getCurrentStep(),
                     field_name: fieldName,
                     field_type: fieldType,
                     focus_count: interactionData.focus_count,
@@ -80,8 +102,8 @@
                     interactionData.focus_start = null;
 
                     this.core.track('checkout_field_blur', {
-                        checkout_id: this.checkoutTracker.checkoutSessionData.checkout_id,
-                        step: this.checkoutTracker.currentStep,
+                        checkout_id: this.getCheckoutId(),
+                        step: this.getCurrentStep(),
                         field_name: fieldName,
                         field_type: fieldType,
                         focus_time: focusTime,
@@ -106,8 +128,8 @@
             // Change events
             element.addEventListener('change', () => {
                 this.core.track('checkout_field_change', {
-                    checkout_id: this.checkoutTracker.checkoutSessionData.checkout_id,
-                    step: this.checkoutTracker.currentStep,
+                    checkout_id: this.getCheckoutId(),
+                    step: this.getCurrentStep(),
                     field_name: fieldName,
                     field_type: fieldType,
                     new_value: fieldType === 'select-one' ? element.value : '[hidden]',
@@ -126,8 +148,8 @@
                     interactionData.error_count++;
 
                     this.core.track('checkout_field_error', {
-                        checkout_id: this.checkoutTracker.checkoutSessionData.checkout_id,
-                        step: this.checkoutTracker.currentStep,
+                        checkout_id: this.getCheckoutId(),
+                        step: this.getCurrentStep(),
                         field_name: fieldName,
                         field_type: fieldType,
                         error_count: interactionData.error_count,
@@ -139,10 +161,11 @@
             setInterval(checkForErrors, 2000);
 
             // Salvar dados de interação
-            if (!this.formInteractions[this.checkoutTracker.currentStep]) {
-                this.formInteractions[this.checkoutTracker.currentStep] = {};
+            const currentStep = this.getCurrentStep();
+            if (!this.formInteractions[currentStep]) {
+                this.formInteractions[currentStep] = {};
             }
-            this.formInteractions[this.checkoutTracker.currentStep][fieldName] = interactionData;
+            this.formInteractions[currentStep][fieldName] = interactionData;
         },
 
         throttledTrackInput: (() => {
@@ -157,8 +180,8 @@
 
                 throttleMap.set(fieldName, setTimeout(() => {
                     this.core.track('checkout_field_input', {
-                        checkout_id: this.checkoutTracker.checkoutSessionData.checkout_id,
-                        step: this.checkoutTracker.currentStep,
+                        checkout_id: this.getCheckoutId(),
+                        step: this.getCurrentStep(),
                         field_name: fieldName,
                         field_type: interactionData.field_type,
                         input_count: interactionData.input_count,

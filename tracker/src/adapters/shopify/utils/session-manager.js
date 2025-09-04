@@ -8,10 +8,6 @@
     window.ShopifyAdapterModules = window.ShopifyAdapterModules || {};
 
     window.ShopifyAdapterModules.SessionManager = {
-        init: function (core) {
-            this.core = core;
-        },
-
         // Checkout Session Management
         saveCheckoutSession: function (sessionData) {
             try {

@@ -1,7 +1,7 @@
 /*!
  * Influencer Tracker v2.1.0
  * Shopify Adapter - Complete Build
- * Built: 2025-09-03
+ * Built: 2025-09-04
  * 
  * This file contains all modules required for Shopify integration
  * including tracking, analytics, and AI data collection.
@@ -1077,6 +1077,435 @@
 })(window);
 
 
+/* === src/adapters/shopify/utils/data-extractors.js === */
+/*!
+ * Data Extractors Utility Module
+ */
+
+(function (window) {
+    'use strict';
+
+    window.ShopifyAdapterModules = window.ShopifyAdapterModules || {};
+
+    window.ShopifyAdapterModules.DataExtractors = {
+        extractProductData: function () {
+            const productData = {};
+
+            // Tentar múltiplas fontes
+            if (window.product) {
+                productData.product_id = window.product.id;
+                productData.product_handle = window.product.handle;
+                productData.product_title = window.product.title;
+                productData.product_type = window.product.type;
+                productData.vendor = window.product.vendor;
+                productData.price = window.product.price / 100;
+                productData.available = window.product.available;
+                productData.variants_count = window.product.variants?.length || 0;
+            } else if (window.meta?.product) {
+                productData.product_id = window.meta.product.id;
+                productData.product_handle = window.meta.product.handle;
+            }
+
+            // Fallback para meta tags
+            if (!productData.product_id) {
+                const metaProduct = document.querySelector('meta[property="product:retailer_item_id"]');
+                if (metaProduct) productData.product_id = metaProduct.content;
+            }
+
+            return Object.keys(productData).length > 0 ? productData : null;
+        },
+
+        extractCollectionData: function () {
+            const collectionData = {};
+
+            if (window.collection) {
+                collectionData.collection_id = window.collection.id;
+                collectionData.collection_handle = window.collection.handle;
+                collectionData.collection_title = window.collection.title;
+                collectionData.products_count = window.collection.products_count;
+            }
+
+            return Object.keys(collectionData).length > 0 ? collectionData : null;
+        },
+
+        extractCustomerData: function () {
+            const customerData = {};
+
+            if (window.customer) {
+                customerData.customer_id = window.customer.id;
+                customerData.customer_email = window.customer.email;
+                customerData.customer_tags = window.customer.tags;
+                customerData.orders_count = window.customer.orders_count;
+                customerData.total_spent = window.customer.total_spent;
+            } else if (window.Shopify?.customer) {
+                customerData.customer_id = window.Shopify.customer.id;
+                customerData.customer_email = window.Shopify.customer.email;
+            }
+
+            return Object.keys(customerData).length > 0 ? customerData : null;
+        },
+
+        extractShopData: function () {
+            return {
+                shop_domain: window.Shopify?.shop || window.shopifyData?.shop?.domain,
+                shop_currency: window.Shopify?.currency?.active || window.shopifyData?.shop?.currency,
+                shop_money_format: window.Shopify?.money_format,
+                shop_locale: window.Shopify?.locale
+            };
+        },
+
+        extractOrderData: function () {
+            const orderData = {};
+
+            // Shopify checkout object
+            if (window.Shopify?.checkout) {
+                orderData.order_id = window.Shopify.checkout.order_id;
+                orderData.order_number = window.Shopify.checkout.order_number;
+                orderData.total_price = window.Shopify.checkout.total_price / 100;
+                orderData.currency = window.Shopify.checkout.currency;
+                orderData.customer_id = window.Shopify.checkout.customer_id;
+            }
+
+            // Fallback: extrair do DOM
+            if (!orderData.order_id) {
+                const orderElement = document.querySelector('.order-number, [data-order-number], .order-id');
+                if (orderElement) {
+                    orderData.order_number = orderElement.textContent?.trim();
+                }
+            }
+
+            return orderData;
+        },
+
+        getProductId: function () {
+            if (window.product?.id) return window.product.id;
+            if (window.meta?.product?.id) return window.meta.product.id;
+
+            const metaProduct = document.querySelector('meta[property="product:retailer_item_id"]');
+            return metaProduct ? metaProduct.content : null;
+        },
+
+        getProductHandle: function () {
+            if (window.product?.handle) return window.product.handle;
+
+            const pathParts = window.location.pathname.split('/');
+            return pathParts[pathParts.length - 1] || null;
+        }
+    };
+
+    console.log('📦 Data Extractors module loaded');
+
+})(window);
+
+
+/* === src/adapters/shopify/utils/helpers.js === */
+/*!
+ * Helper Functions Module
+ */
+
+(function (window) {
+    'use strict';
+
+    window.ShopifyAdapterModules = window.ShopifyAdapterModules || {};
+
+    window.ShopifyAdapterModules.Helpers = {
+        throttle: function (func, limit) {
+            let inThrottle;
+            return function () {
+                const args = arguments;
+                const context = this;
+                if (!inThrottle) {
+                    func.apply(context, args);
+                    inThrottle = true;
+                    setTimeout(() => inThrottle = false, limit);
+                }
+            };
+        },
+
+        debounce: function (func, wait, immediate) {
+            let timeout;
+            return function () {
+                const context = this;
+                const args = arguments;
+                const later = function () {
+                    timeout = null;
+                    if (!immediate) func.apply(context, args);
+                };
+                const callNow = immediate && !timeout;
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+                if (callNow) func.apply(context, args);
+            };
+        },
+
+        deepMerge: function (target, source) {
+            const output = Object.assign({}, target);
+            if (this.isObject(target) && this.isObject(source)) {
+                Object.keys(source).forEach(key => {
+                    if (this.isObject(source[key])) {
+                        if (!(key in target))
+                            Object.assign(output, { [key]: source[key] });
+                        else
+                            output[key] = this.deepMerge(target[key], source[key]);
+                    } else {
+                        Object.assign(output, { [key]: source[key] });
+                    }
+                });
+            }
+            return output;
+        },
+
+        isObject: function (item) {
+            return item && typeof item === 'object' && !Array.isArray(item);
+        },
+
+        generateId: function (prefix = 'id') {
+            return prefix + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        },
+
+        formatPrice: function (price, currency = 'USD') {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: currency
+            }).format(price);
+        },
+
+        sanitizeString: function (str, maxLength = 100) {
+            if (!str) return '';
+            return str.toString().substring(0, maxLength).trim();
+        },
+
+        isValidEmail: function (email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        },
+
+        getCookie: function (name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return null;
+        },
+
+        setCookie: function (name, value, days = 30) {
+            const expires = new Date();
+            expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+            document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
+        },
+
+        getUrlParameter: function (name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        },
+
+        isElementInViewport: function (element) {
+            const rect = element.getBoundingClientRect();
+            return (
+                rect.top >= 0 &&
+                rect.left >= 0 &&
+                rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+                rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+            );
+        },
+
+        waitForElement: function (selector, timeout = 5000) {
+            return new Promise((resolve, reject) => {
+                const element = document.querySelector(selector);
+                if (element) {
+                    resolve(element);
+                    return;
+                }
+
+                const observer = new MutationObserver(() => {
+                    const element = document.querySelector(selector);
+                    if (element) {
+                        observer.disconnect();
+                        resolve(element);
+                    }
+                });
+
+                observer.observe(document.body, {
+                    childList: true,
+                    subtree: true
+                });
+
+                setTimeout(() => {
+                    observer.disconnect();
+                    reject(new Error(`Element ${selector} not found within ${timeout}ms`));
+                }, timeout);
+            });
+        }
+    };
+
+    console.log('📦 Helpers module loaded');
+
+})(window);
+
+
+/* === src/adapters/shopify/utils/session-manager.js === */
+/*!
+ * Session Manager Module
+ */
+
+(function (window) {
+    'use strict';
+
+    window.ShopifyAdapterModules = window.ShopifyAdapterModules || {};
+
+    window.ShopifyAdapterModules.SessionManager = {
+        // Checkout Session Management
+        saveCheckoutSession: function (sessionData) {
+            try {
+                sessionStorage.setItem('checkout_session', JSON.stringify(sessionData));
+            } catch (e) {
+                console.log('Erro ao salvar sessão de checkout:', e);
+            }
+        },
+
+        getCheckoutSession: function () {
+            try {
+                return JSON.parse(sessionStorage.getItem('checkout_session') || 'null');
+            } catch (e) {
+                return null;
+            }
+        },
+
+        clearCheckoutSession: function () {
+            try {
+                sessionStorage.removeItem('checkout_session');
+            } catch (e) {
+                console.log('Erro ao limpar sessão de checkout:', e);
+            }
+        },
+
+        // User Journey Management
+        saveUserJourney: function (journeyData) {
+            try {
+                const journey = this.getUserJourney() || [];
+                journey.push({
+                    timestamp: Date.now(),
+                    ...journeyData
+                });
+
+                // Manter apenas últimos 100 eventos
+                sessionStorage.setItem('user_journey', JSON.stringify(journey.slice(-100)));
+            } catch (e) {
+                console.log('Erro ao salvar jornada do usuário:', e);
+            }
+        },
+
+        getUserJourney: function () {
+            try {
+                return JSON.parse(sessionStorage.getItem('user_journey') || '[]');
+            } catch (e) {
+                return [];
+            }
+        },
+
+        // Attribution Management
+        saveAttribution: function (attributionData) {
+            try {
+                sessionStorage.setItem('inf_attribution', JSON.stringify(attributionData));
+            } catch (e) {
+                console.log('Erro ao salvar atribuição:', e);
+            }
+        },
+
+        getAttribution: function () {
+            try {
+                return JSON.parse(sessionStorage.getItem('inf_attribution') || 'null');
+            } catch (e) {
+                return null;
+            }
+        },
+
+        // Performance Metrics
+        savePerformanceMetric: function (metric, value) {
+            try {
+                const metrics = this.getPerformanceMetrics();
+                metrics[metric] = {
+                    value: value,
+                    timestamp: Date.now()
+                };
+                sessionStorage.setItem('performance_metrics', JSON.stringify(metrics));
+            } catch (e) {
+                console.log('Erro ao salvar métrica de performance:', e);
+            }
+        },
+
+        getPerformanceMetrics: function () {
+            try {
+                return JSON.parse(sessionStorage.getItem('performance_metrics') || '{}');
+            } catch (e) {
+                return {};
+            }
+        },
+
+        // Generic Storage Methods
+        setItem: function (key, value, storage = 'session') {
+            try {
+                const storageObj = storage === 'local' ? localStorage : sessionStorage;
+                storageObj.setItem(key, JSON.stringify(value));
+            } catch (e) {
+                console.log(`Erro ao salvar ${key}:`, e);
+            }
+        },
+
+        getItem: function (key, defaultValue = null, storage = 'session') {
+            try {
+                const storageObj = storage === 'local' ? localStorage : sessionStorage;
+                const item = storageObj.getItem(key);
+                return item ? JSON.parse(item) : defaultValue;
+            } catch (e) {
+                console.log(`Erro ao recuperar ${key}:`, e);
+                return defaultValue;
+            }
+        },
+
+        removeItem: function (key, storage = 'session') {
+            try {
+                const storageObj = storage === 'local' ? localStorage : sessionStorage;
+                storageObj.removeItem(key);
+            } catch (e) {
+                console.log(`Erro ao remover ${key}:`, e);
+            }
+        },
+
+        // Cleanup Methods
+        clearExpiredData: function () {
+            const now = Date.now();
+            const oneDay = 24 * 60 * 60 * 1000;
+
+            // Limpar dados antigos de abandono
+            try {
+                const abandonmentData = JSON.parse(localStorage.getItem('checkout_abandonment') || 'null');
+                if (abandonmentData && (now - abandonmentData.abandonment_time) > oneDay) {
+                    localStorage.removeItem('checkout_abandonment');
+                }
+            } catch (e) {
+                console.log('Erro ao limpar dados de abandono:', e);
+            }
+
+            // Limpar métricas antigas
+            try {
+                const metrics = this.getPerformanceMetrics();
+                Object.keys(metrics).forEach(key => {
+                    if ((now - metrics[key].timestamp) > oneDay) {
+                        delete metrics[key];
+                    }
+                });
+                sessionStorage.setItem('performance_metrics', JSON.stringify(metrics));
+            } catch (e) {
+                console.log('Erro ao limpar métricas antigas:', e);
+            }
+        }
+    };
+
+    console.log('📦 Session Manager module loaded');
+
+})(window);
+
+
 /* === src/adapters/shopify/core/state-manager.js === */
 /*!
  * State Manager for Shopify Adapter
@@ -1210,19 +1639,6 @@
             } else {
                 console.log('📊 Evento rastreado:', eventType, properties);
             }
-        },
-
-        throttle: function (func, limit) {
-            let inThrottle;
-            return function () {
-                const args = arguments;
-                const context = this;
-                if (!inThrottle) {
-                    func.apply(context, args);
-                    inThrottle = true;
-                    setTimeout(() => inThrottle = false, limit);
-                }
-            };
         }
     };
 
@@ -1436,7 +1852,7 @@
     window.ShopifyAdapterModules.ProductTracker = {
         init: function (core) {
             this.core = core;
-            this.dataExtractors = core.dataExtractors;
+            this.dataExtractors = window.ShopifyAdapterModules.DataExtractors;
             this.setupProductTracking();
         },
 
@@ -1701,7 +2117,7 @@
         setupScrollTracking: function () {
             console.log('📜 Configurando tracking de scroll');
 
-            window.addEventListener('scroll', this.core.throttle(() => {
+            window.addEventListener('scroll', window.InfluencerTracker.Utils.throttle(() => {
                 const scrollPercent = Math.round(
                     (window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100
                 );
@@ -1778,7 +2194,7 @@
         },
 
         trackClickBehavior: function () {
-            document.addEventListener('click', this.core.throttle((e) => {
+            document.addEventListener('click', window.InfluencerTracker.Utils.throttle((e) => {
                 const element = e.target;
 
                 let clickType = 'generic';
@@ -1942,6 +2358,7 @@
     window.ShopifyAdapterModules = window.ShopifyAdapterModules || {};
 
     window.ShopifyAdapterModules.CheckoutTracker = {
+        isInitialized: false,
         checkoutStartTime: null,
         checkoutSteps: [],
         currentStep: null,
@@ -1953,6 +2370,7 @@
             this.sessionManager = core.sessionManager;
             this.dataExtractors = core.dataExtractors;
             this.setupCheckoutTracking();
+            this.isInitialized = true;
         },
 
         setupCheckoutTracking: function () {
@@ -2410,7 +2828,21 @@
         init: function (core) {
             this.core = core;
             this.checkoutTracker = core.checkoutTracker;
-            this.setupFormMonitoring();
+            
+            // Aguardar a inicialização do checkoutTracker
+            if (this.checkoutTracker && this.checkoutTracker.isInitialized) {
+                this.setupFormMonitoring();
+            } else {
+                // Aguardar a inicialização
+                const checkInit = () => {
+                    if (this.checkoutTracker && this.checkoutTracker.isInitialized) {
+                        this.setupFormMonitoring();
+                    } else {
+                        setTimeout(checkInit, 100);
+                    }
+                };
+                checkInit();
+            }
         },
 
         setupFormMonitoring: function () {
@@ -2433,6 +2865,14 @@
             });
 
             observer.observe(document.body, { childList: true, subtree: true });
+        },
+
+        getCurrentStep: function() {
+            return this.checkoutTracker?.currentStep || 'unknown';
+        },
+
+        getCheckoutId: function() {
+            return this.checkoutTracker?.checkoutSessionData?.checkout_id || 'unknown';
         },
 
         setupFieldMonitoring: function (element) {
@@ -2460,8 +2900,8 @@
                 interactionData.focus_start = Date.now();
 
                 this.core.track('checkout_field_focus', {
-                    checkout_id: this.checkoutTracker.checkoutSessionData.checkout_id,
-                    step: this.checkoutTracker.currentStep,
+                    checkout_id: this.getCheckoutId(),
+                    step: this.getCurrentStep(),
                     field_name: fieldName,
                     field_type: fieldType,
                     focus_count: interactionData.focus_count,
@@ -2477,8 +2917,8 @@
                     interactionData.focus_start = null;
 
                     this.core.track('checkout_field_blur', {
-                        checkout_id: this.checkoutTracker.checkoutSessionData.checkout_id,
-                        step: this.checkoutTracker.currentStep,
+                        checkout_id: this.getCheckoutId(),
+                        step: this.getCurrentStep(),
                         field_name: fieldName,
                         field_type: fieldType,
                         focus_time: focusTime,
@@ -2503,8 +2943,8 @@
             // Change events
             element.addEventListener('change', () => {
                 this.core.track('checkout_field_change', {
-                    checkout_id: this.checkoutTracker.checkoutSessionData.checkout_id,
-                    step: this.checkoutTracker.currentStep,
+                    checkout_id: this.getCheckoutId(),
+                    step: this.getCurrentStep(),
                     field_name: fieldName,
                     field_type: fieldType,
                     new_value: fieldType === 'select-one' ? element.value : '[hidden]',
@@ -2523,8 +2963,8 @@
                     interactionData.error_count++;
 
                     this.core.track('checkout_field_error', {
-                        checkout_id: this.checkoutTracker.checkoutSessionData.checkout_id,
-                        step: this.checkoutTracker.currentStep,
+                        checkout_id: this.getCheckoutId(),
+                        step: this.getCurrentStep(),
                         field_name: fieldName,
                         field_type: fieldType,
                         error_count: interactionData.error_count,
@@ -2536,10 +2976,11 @@
             setInterval(checkForErrors, 2000);
 
             // Salvar dados de interação
-            if (!this.formInteractions[this.checkoutTracker.currentStep]) {
-                this.formInteractions[this.checkoutTracker.currentStep] = {};
+            const currentStep = this.getCurrentStep();
+            if (!this.formInteractions[currentStep]) {
+                this.formInteractions[currentStep] = {};
             }
-            this.formInteractions[this.checkoutTracker.currentStep][fieldName] = interactionData;
+            this.formInteractions[currentStep][fieldName] = interactionData;
         },
 
         throttledTrackInput: (() => {
@@ -2554,8 +2995,8 @@
 
                 throttleMap.set(fieldName, setTimeout(() => {
                     this.core.track('checkout_field_input', {
-                        checkout_id: this.checkoutTracker.checkoutSessionData.checkout_id,
-                        step: this.checkoutTracker.currentStep,
+                        checkout_id: this.getCheckoutId(),
+                        step: this.getCurrentStep(),
                         field_name: fieldName,
                         field_type: interactionData.field_type,
                         input_count: interactionData.input_count,
@@ -2700,447 +3141,6 @@
     };
 
     console.log('🚪 AbandonmentTracker module loaded');
-
-})(window);
-
-
-/* === src/adapters/shopify/utils/data-extractors.js === */
-/*!
- * Data Extractors Utility Module
- */
-
-(function (window) {
-    'use strict';
-
-    window.ShopifyAdapterModules = window.ShopifyAdapterModules || {};
-
-    window.ShopifyAdapterModules.DataExtractors = {
-        init: function (core) {
-            this.core = core;
-        },
-
-        extractProductData: function () {
-            const productData = {};
-
-            // Tentar múltiplas fontes
-            if (window.product) {
-                productData.product_id = window.product.id;
-                productData.product_handle = window.product.handle;
-                productData.product_title = window.product.title;
-                productData.product_type = window.product.type;
-                productData.vendor = window.product.vendor;
-                productData.price = window.product.price / 100;
-                productData.available = window.product.available;
-                productData.variants_count = window.product.variants?.length || 0;
-            } else if (window.meta?.product) {
-                productData.product_id = window.meta.product.id;
-                productData.product_handle = window.meta.product.handle;
-            }
-
-            // Fallback para meta tags
-            if (!productData.product_id) {
-                const metaProduct = document.querySelector('meta[property="product:retailer_item_id"]');
-                if (metaProduct) productData.product_id = metaProduct.content;
-            }
-
-            return Object.keys(productData).length > 0 ? productData : null;
-        },
-
-        extractCollectionData: function () {
-            const collectionData = {};
-
-            if (window.collection) {
-                collectionData.collection_id = window.collection.id;
-                collectionData.collection_handle = window.collection.handle;
-                collectionData.collection_title = window.collection.title;
-                collectionData.products_count = window.collection.products_count;
-            }
-
-            return Object.keys(collectionData).length > 0 ? collectionData : null;
-        },
-
-        extractCustomerData: function () {
-            const customerData = {};
-
-            if (window.customer) {
-                customerData.customer_id = window.customer.id;
-                customerData.customer_email = window.customer.email;
-                customerData.customer_tags = window.customer.tags;
-                customerData.orders_count = window.customer.orders_count;
-                customerData.total_spent = window.customer.total_spent;
-            } else if (window.Shopify?.customer) {
-                customerData.customer_id = window.Shopify.customer.id;
-                customerData.customer_email = window.Shopify.customer.email;
-            }
-
-            return Object.keys(customerData).length > 0 ? customerData : null;
-        },
-
-        extractShopData: function () {
-            return {
-                shop_domain: window.Shopify?.shop || window.shopifyData?.shop?.domain,
-                shop_currency: window.Shopify?.currency?.active || window.shopifyData?.shop?.currency,
-                shop_money_format: window.Shopify?.money_format,
-                shop_locale: window.Shopify?.locale
-            };
-        },
-
-        extractOrderData: function () {
-            const orderData = {};
-
-            // Shopify checkout object
-            if (window.Shopify?.checkout) {
-                orderData.order_id = window.Shopify.checkout.order_id;
-                orderData.order_number = window.Shopify.checkout.order_number;
-                orderData.total_price = window.Shopify.checkout.total_price / 100;
-                orderData.currency = window.Shopify.checkout.currency;
-                orderData.customer_id = window.Shopify.checkout.customer_id;
-            }
-
-            // Fallback: extrair do DOM
-            if (!orderData.order_id) {
-                const orderElement = document.querySelector('.order-number, [data-order-number], .order-id');
-                if (orderElement) {
-                    orderData.order_number = orderElement.textContent?.trim();
-                }
-            }
-
-            return orderData;
-        },
-
-        getProductId: function () {
-            if (window.product?.id) return window.product.id;
-            if (window.meta?.product?.id) return window.meta.product.id;
-
-            const metaProduct = document.querySelector('meta[property="product:retailer_item_id"]');
-            return metaProduct ? metaProduct.content : null;
-        },
-
-        getProductHandle: function () {
-            if (window.product?.handle) return window.product.handle;
-
-            const pathParts = window.location.pathname.split('/');
-            return pathParts[pathParts.length - 1] || null;
-        }
-    };
-
-    console.log('📦 Data Extractors module loaded');
-
-})(window);
-
-
-/* === src/adapters/shopify/utils/helpers.js === */
-/*!
- * Helper Functions Module
- */
-
-(function (window) {
-    'use strict';
-
-    window.ShopifyAdapterModules = window.ShopifyAdapterModules || {};
-
-    window.ShopifyAdapterModules.Helpers = {
-        init: function (core) {
-            this.core = core;
-        },
-
-        throttle: function (func, limit) {
-            let inThrottle;
-            return function () {
-                const args = arguments;
-                const context = this;
-                if (!inThrottle) {
-                    func.apply(context, args);
-                    inThrottle = true;
-                    setTimeout(() => inThrottle = false, limit);
-                }
-            };
-        },
-
-        debounce: function (func, wait, immediate) {
-            let timeout;
-            return function () {
-                const context = this;
-                const args = arguments;
-                const later = function () {
-                    timeout = null;
-                    if (!immediate) func.apply(context, args);
-                };
-                const callNow = immediate && !timeout;
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-                if (callNow) func.apply(context, args);
-            };
-        },
-
-        deepMerge: function (target, source) {
-            const output = Object.assign({}, target);
-            if (this.isObject(target) && this.isObject(source)) {
-                Object.keys(source).forEach(key => {
-                    if (this.isObject(source[key])) {
-                        if (!(key in target))
-                            Object.assign(output, { [key]: source[key] });
-                        else
-                            output[key] = this.deepMerge(target[key], source[key]);
-                    } else {
-                        Object.assign(output, { [key]: source[key] });
-                    }
-                });
-            }
-            return output;
-        },
-
-        isObject: function (item) {
-            return item && typeof item === 'object' && !Array.isArray(item);
-        },
-
-        generateId: function (prefix = 'id') {
-            return prefix + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        },
-
-        formatPrice: function (price, currency = 'USD') {
-            return new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: currency
-            }).format(price);
-        },
-
-        sanitizeString: function (str, maxLength = 100) {
-            if (!str) return '';
-            return str.toString().substring(0, maxLength).trim();
-        },
-
-        isValidEmail: function (email) {
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            return emailRegex.test(email);
-        },
-
-        getCookie: function (name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
-            return null;
-        },
-
-        setCookie: function (name, value, days = 30) {
-            const expires = new Date();
-            expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
-            document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
-        },
-
-        getUrlParameter: function (name) {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get(name);
-        },
-
-        isElementInViewport: function (element) {
-            const rect = element.getBoundingClientRect();
-            return (
-                rect.top >= 0 &&
-                rect.left >= 0 &&
-                rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-                rect.right <= (window.innerWidth || document.documentElement.clientWidth)
-            );
-        },
-
-        waitForElement: function (selector, timeout = 5000) {
-            return new Promise((resolve, reject) => {
-                const element = document.querySelector(selector);
-                if (element) {
-                    resolve(element);
-                    return;
-                }
-
-                const observer = new MutationObserver(() => {
-                    const element = document.querySelector(selector);
-                    if (element) {
-                        observer.disconnect();
-                        resolve(element);
-                    }
-                });
-
-                observer.observe(document.body, {
-                    childList: true,
-                    subtree: true
-                });
-
-                setTimeout(() => {
-                    observer.disconnect();
-                    reject(new Error(`Element ${selector} not found within ${timeout}ms`));
-                }, timeout);
-            });
-        }
-    };
-
-    console.log('📦 Helpers module loaded');
-
-})(window);
-
-
-/* === src/adapters/shopify/utils/session-manager.js === */
-/*!
- * Session Manager Module
- */
-
-(function (window) {
-    'use strict';
-
-    window.ShopifyAdapterModules = window.ShopifyAdapterModules || {};
-
-    window.ShopifyAdapterModules.SessionManager = {
-        init: function (core) {
-            this.core = core;
-        },
-
-        // Checkout Session Management
-        saveCheckoutSession: function (sessionData) {
-            try {
-                sessionStorage.setItem('checkout_session', JSON.stringify(sessionData));
-            } catch (e) {
-                console.log('Erro ao salvar sessão de checkout:', e);
-            }
-        },
-
-        getCheckoutSession: function () {
-            try {
-                return JSON.parse(sessionStorage.getItem('checkout_session') || 'null');
-            } catch (e) {
-                return null;
-            }
-        },
-
-        clearCheckoutSession: function () {
-            try {
-                sessionStorage.removeItem('checkout_session');
-            } catch (e) {
-                console.log('Erro ao limpar sessão de checkout:', e);
-            }
-        },
-
-        // User Journey Management
-        saveUserJourney: function (journeyData) {
-            try {
-                const journey = this.getUserJourney() || [];
-                journey.push({
-                    timestamp: Date.now(),
-                    ...journeyData
-                });
-
-                // Manter apenas últimos 100 eventos
-                sessionStorage.setItem('user_journey', JSON.stringify(journey.slice(-100)));
-            } catch (e) {
-                console.log('Erro ao salvar jornada do usuário:', e);
-            }
-        },
-
-        getUserJourney: function () {
-            try {
-                return JSON.parse(sessionStorage.getItem('user_journey') || '[]');
-            } catch (e) {
-                return [];
-            }
-        },
-
-        // Attribution Management
-        saveAttribution: function (attributionData) {
-            try {
-                sessionStorage.setItem('inf_attribution', JSON.stringify(attributionData));
-            } catch (e) {
-                console.log('Erro ao salvar atribuição:', e);
-            }
-        },
-
-        getAttribution: function () {
-            try {
-                return JSON.parse(sessionStorage.getItem('inf_attribution') || 'null');
-            } catch (e) {
-                return null;
-            }
-        },
-
-        // Performance Metrics
-        savePerformanceMetric: function (metric, value) {
-            try {
-                const metrics = this.getPerformanceMetrics();
-                metrics[metric] = {
-                    value: value,
-                    timestamp: Date.now()
-                };
-                sessionStorage.setItem('performance_metrics', JSON.stringify(metrics));
-            } catch (e) {
-                console.log('Erro ao salvar métrica de performance:', e);
-            }
-        },
-
-        getPerformanceMetrics: function () {
-            try {
-                return JSON.parse(sessionStorage.getItem('performance_metrics') || '{}');
-            } catch (e) {
-                return {};
-            }
-        },
-
-        // Generic Storage Methods
-        setItem: function (key, value, storage = 'session') {
-            try {
-                const storageObj = storage === 'local' ? localStorage : sessionStorage;
-                storageObj.setItem(key, JSON.stringify(value));
-            } catch (e) {
-                console.log(`Erro ao salvar ${key}:`, e);
-            }
-        },
-
-        getItem: function (key, defaultValue = null, storage = 'session') {
-            try {
-                const storageObj = storage === 'local' ? localStorage : sessionStorage;
-                const item = storageObj.getItem(key);
-                return item ? JSON.parse(item) : defaultValue;
-            } catch (e) {
-                console.log(`Erro ao recuperar ${key}:`, e);
-                return defaultValue;
-            }
-        },
-
-        removeItem: function (key, storage = 'session') {
-            try {
-                const storageObj = storage === 'local' ? localStorage : sessionStorage;
-                storageObj.removeItem(key);
-            } catch (e) {
-                console.log(`Erro ao remover ${key}:`, e);
-            }
-        },
-
-        // Cleanup Methods
-        clearExpiredData: function () {
-            const now = Date.now();
-            const oneDay = 24 * 60 * 60 * 1000;
-
-            // Limpar dados antigos de abandono
-            try {
-                const abandonmentData = JSON.parse(localStorage.getItem('checkout_abandonment') || 'null');
-                if (abandonmentData && (now - abandonmentData.abandonment_time) > oneDay) {
-                    localStorage.removeItem('checkout_abandonment');
-                }
-            } catch (e) {
-                console.log('Erro ao limpar dados de abandono:', e);
-            }
-
-            // Limpar métricas antigas
-            try {
-                const metrics = this.getPerformanceMetrics();
-                Object.keys(metrics).forEach(key => {
-                    if ((now - metrics[key].timestamp) > oneDay) {
-                        delete metrics[key];
-                    }
-                });
-                sessionStorage.setItem('performance_metrics', JSON.stringify(metrics));
-            } catch (e) {
-                console.log('Erro ao limpar métricas antigas:', e);
-            }
-        }
-    };
-
-    console.log('📦 Session Manager module loaded');
 
 })(window);
 

@@ -17,7 +17,7 @@
         setupScrollTracking: function () {
             console.log('📜 Configurando tracking de scroll');
 
-            window.addEventListener('scroll', this.core.throttle(() => {
+            window.addEventListener('scroll', window.InfluencerTracker.Utils.throttle(() => {
                 const scrollPercent = Math.round(
                     (window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100
                 );
