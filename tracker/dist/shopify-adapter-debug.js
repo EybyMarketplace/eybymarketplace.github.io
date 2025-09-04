@@ -2117,7 +2117,6 @@
             this.trackClickBehavior();
             this.trackFormInteractions();
             this.trackPageVisibility();
-            this.trackExitIntent();
         },
 
         trackClickBehavior: function () {
@@ -2186,22 +2185,6 @@
                     time_on_page: Date.now() - this.core.startTime,
                     timestamp: Date.now()
                 });
-            });
-        },
-
-        trackExitIntent: function () {
-            document.addEventListener('mouseleave', (e) => {
-                if (e.clientY <= 0 && !this.core.stateManager.exitTracked) {
-                    this.core.stateManager.exitTracked = true;
-
-                    this.core.track('exit_intent', {
-                        time_on_page: Date.now() - this.core.startTime,
-                        scroll_percent: this.core.stateManager.lastScrollPercent,
-                        page_url: window.location.href,
-                        referrer: document.referrer,
-                        timestamp: Date.now()
-                    });
-                }
             });
         },
 
@@ -2915,8 +2898,8 @@
     window.ShopifyAdapterModules.AbandonmentTracker = {
         init: function (core) {
             this.core = core;
-            this.checkoutTracker = core.checkoutTracker;
-            this.sessionManager = core.sessionManager;
+            this.checkoutTracker = window.ShopifyAdapterModules.CheckoutTracker;
+            this.sessionManager = window.ShopifyAdapterModules.SessionManager;
             this.setupAbandonmentTracking();
         },
 

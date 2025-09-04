@@ -10,8 +10,8 @@
     window.ShopifyAdapterModules.AbandonmentTracker = {
         init: function (core) {
             this.core = core;
-            this.checkoutTracker = core.checkoutTracker;
-            this.sessionManager = core.sessionManager;
+            this.checkoutTracker = window.ShopifyAdapterModules.CheckoutTracker;
+            this.sessionManager = window.ShopifyAdapterModules.SessionManager;
             this.setupAbandonmentTracking();
         },
 

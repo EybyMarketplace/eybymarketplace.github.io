@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "buildDate": "2025-09-04T14:38:48.379Z",
+  "buildDate": "2025-09-04T14:49:06.781Z",
   "files": [
     "src/utils/utils.js",
     "src/modules/config.js",
@@ -25,7 +25,7 @@
     "src/adapters/shopify/shopify-adapter.js"
   ],
   "sizes": {
-    "debug": 112766,
-    "minified": 69377
+    "debug": 112105,
+    "minified": 68984
   }
 }
