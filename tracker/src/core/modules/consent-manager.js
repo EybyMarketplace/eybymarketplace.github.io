@@ -4,9 +4,9 @@
 (function(window) {
     'use strict';
     
-    window.InfluencerTracker = window.InfluencerTracker || {};
+    window.CommerceTracker = window.CommerceTracker || {};
     
-    window.InfluencerTracker.ConsentManager = {
+    window.CommerceTracker.ConsentManager = {
         // Chaves de armazenamento
         CONSENT_KEY: 'analytics_consent',
         CONSENT_DATE_KEY: 'analytics_consent_date',
@@ -16,7 +16,7 @@
         
         // Verificar se há consentimento
         checkConsent: function() {
-            const config = window.InfluencerTracker.Config;
+            const config = window.CommerceTracker.Config;
             if (!config.get('enableConsentCheck')) return true;
             
             const consent = localStorage.getItem(this.CONSENT_KEY);

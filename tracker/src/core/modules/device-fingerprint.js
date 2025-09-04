@@ -4,9 +4,9 @@
 (function(window) {
     'use strict';
     
-    window.InfluencerTracker = window.InfluencerTracker || {};
+    window.CommerceTracker = window.CommerceTracker || {};
     
-    window.InfluencerTracker.DeviceFingerprint = {
+    window.CommerceTracker.DeviceFingerprint = {
         // Cache do fingerprint
         cachedFingerprint: null,
         

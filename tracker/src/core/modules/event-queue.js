@@ -4,9 +4,9 @@
 (function(window) {
     'use strict';
     
-    window.InfluencerTracker = window.InfluencerTracker || {};
+    window.CommerceTracker = window.CommerceTracker || {};
     
-    window.InfluencerTracker.EventQueue = {
+    window.CommerceTracker.EventQueue = {
         // Propriedades da fila
         queue: [],
         flushTimer: null,
@@ -42,7 +42,7 @@
         add: function(event) {
             this.queue.push(event);
             
-            const config = window.InfluencerTracker.Config;
+            const config = window.CommerceTracker.Config;
             const batchSize = config.get('batchSize');
             
             if (this.queue.length >= batchSize) {
@@ -58,7 +58,7 @@
                 clearTimeout(this.flushTimer);
             }
             
-            const config = window.InfluencerTracker.Config;
+            const config = window.CommerceTracker.Config;
             const batchTimeout = config.get('batchTimeout');
             
             this.flushTimer = setTimeout(() => {
@@ -70,7 +70,7 @@
         flush: function() {
             if (this.queue.length === 0) return Promise.resolve();
             
-            const config = window.InfluencerTracker.Config;
+            const config = window.CommerceTracker.Config;
             const apiEndpoint = config.get('apiEndpoint');
             const projectId = config.get('projectId');
             
@@ -93,7 +93,7 @@
         
         // Enviar eventos via fetch
         sendEvents: function(payload, originalEvents) {
-            const config = window.InfluencerTracker.Config;
+            const config = window.CommerceTracker.Config;
             
             return fetch(config.get('apiEndpoint'), {
                 method: 'POST',

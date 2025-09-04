@@ -4,9 +4,9 @@
 (function(window) {
     'use strict';
     
-    window.InfluencerTracker = window.InfluencerTracker || {};
+    window.CommerceTracker = window.CommerceTracker || {};
     
-    window.InfluencerTracker.IdGenerator = {
+    window.CommerceTracker.IdGenerator = {
         // Chaves de armazenamento
         USER_ID_KEY: 'inf_user_id',
         SESSION_KEY: 'inf_session',
@@ -33,7 +33,7 @@
         // Obter ou criar Session ID
         getSessionId: function() {
             let sessionData = sessionStorage.getItem(this.SESSION_KEY);
-            const config = window.InfluencerTracker.Config;
+            const config = window.CommerceTracker.Config;
             const sessionTimeout = config.get('sessionTimeout');
             
             if (sessionData) {

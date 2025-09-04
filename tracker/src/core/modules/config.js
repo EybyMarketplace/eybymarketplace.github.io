@@ -5,10 +5,10 @@
     'use strict';
     
     // Criar namespace se não existir
-    window.InfluencerTracker = window.InfluencerTracker || {};
+    window.CommerceTracker = window.CommerceTracker || {};
     
     // Módulo de Configuração
-    window.InfluencerTracker.Config = {
+    window.CommerceTracker.Config = {
         // Configurações padrão
         defaults: {
             apiEndpoint: '',
@@ -50,7 +50,7 @@
     };
     
     // Auto-inicializar
-    window.InfluencerTracker.Config.init();
+    window.CommerceTracker.Config.init();
     
     console.log('📋 Config module loaded');
     

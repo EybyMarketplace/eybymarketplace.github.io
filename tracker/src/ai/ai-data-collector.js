@@ -128,8 +128,8 @@
             const analysis = this.analyzeBehavior();
 
             // Usar o sistema existente do InfluencerTracker
-            if (window.InfluencerTracker) {
-                window.InfluencerTracker.track('ai_session_analysis', {
+            if (window.CommerceTracker) {
+                window.CommerceTracker.track('ai_session_analysis', {
                     session_analysis: analysis,
                     session_duration: Date.now() - this.sessionStart,
                     total_events: Object.values(this.behaviorMetrics).reduce((sum, val) =>
@@ -140,10 +140,10 @@
     };
 
     // Integrar com o InfluencerTracker existente
-    if (window.InfluencerTracker) {
-        const originalTrack = window.InfluencerTracker.track;
+    if (window.CommerceTracker) {
+        const originalTrack = window.CommerceTracker.track;
 
-        window.InfluencerTracker.track = function (eventType, properties = {}) {
+        window.CommerceTracker.track = function (eventType, properties = {}) {
             // Atualizar métricas de IA
             AISessionAnalyzer.updateMetrics(eventType, properties);
 
@@ -152,7 +152,7 @@
         };
 
         // Adicionar método para análise manual
-        window.InfluencerTracker.getAIAnalysis = function () {
+        window.CommerceTracker.getAIAnalysis = function () {
             return AISessionAnalyzer.analyzeBehavior();
         };
     }

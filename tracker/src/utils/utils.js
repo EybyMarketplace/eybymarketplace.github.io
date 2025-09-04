@@ -4,9 +4,9 @@
 (function(window) {
     'use strict';
     
-    window.InfluencerTracker = window.InfluencerTracker || {};
+    window.CommerceTracker = window.CommerceTracker || {};
     
-    window.InfluencerTracker.Utils = {
+    window.CommerceTracker.Utils = {
         // Throttle function
         throttle: function(func, limit) {
             let inThrottle;

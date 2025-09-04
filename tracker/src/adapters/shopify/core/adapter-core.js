@@ -34,8 +34,8 @@
 
         track: function (eventType, properties = {}) {
             // Use the main tracker
-            if (window.InfluencerTracker && window.InfluencerTracker.track) {
-                window.InfluencerTracker.track(eventType, properties);
+            if (window.CommerceTracker && window.CommerceTracker.track) {
+                window.CommerceTracker.track(eventType, properties);
             } else {
                 console.log('📊 Evento rastreado:', eventType, properties);
             }

@@ -5,16 +5,16 @@
     'use strict';
     
     // Aliases para facilitar uso
-    const Config = window.InfluencerTracker.Config;
-    const ConsentManager = window.InfluencerTracker.ConsentManager;
-    const IdGenerator = window.InfluencerTracker.IdGenerator;
-    const InfluencerDetector = window.InfluencerTracker.InfluencerDetector;
-    const DeviceFingerprint = window.InfluencerTracker.DeviceFingerprint;
-    const EventQueue = window.InfluencerTracker.EventQueue;
-    const Utils = window.InfluencerTracker.Utils;
+    const Config = window.CommerceTracker.Config;
+    const ConsentManager = window.CommerceTracker.ConsentManager;
+    const IdGenerator = window.CommerceTracker.IdGenerator;
+    const InfluencerDetector = window.CommerceTracker.InfluencerDetector;
+    const DeviceFingerprint = window.CommerceTracker.DeviceFingerprint;
+    const EventQueue = window.CommerceTracker.EventQueue;
+    const Utils = window.CommerceTracker.Utils;
     
     // Tracker Principal
-    window.InfluencerTracker.Core = {
+    window.CommerceTracker.Core = {
         // Estado do tracker
         initialized: false,
         startTime: Date.now(),

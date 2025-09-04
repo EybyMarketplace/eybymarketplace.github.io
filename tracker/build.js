@@ -25,7 +25,7 @@ class ShopifyAdapterBuilder {
         this.buildOrder = [
             // Core utilities first
             'src/utils/utils.js',
-            'src/modules/config.js',
+            'src/core/modules/config.js',
 
             // Core modules
             'src/core/modules/consent-manager.js',

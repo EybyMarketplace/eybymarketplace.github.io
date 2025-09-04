@@ -4,9 +4,9 @@
 (function(window) {
     'use strict';
     
-    window.InfluencerTracker = window.InfluencerTracker || {};
+    window.CommerceTracker = window.CommerceTracker || {};
     
-    window.InfluencerTracker.InfluencerDetector = {
+    window.CommerceTracker.InfluencerDetector = {
         // Chave de armazenamento
         ATTRIBUTION_KEY: 'inf_attribution',
         

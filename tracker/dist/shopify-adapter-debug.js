@@ -15,9 +15,9 @@
 (function(window) {
     'use strict';
     
-    window.InfluencerTracker = window.InfluencerTracker || {};
+    window.CommerceTracker = window.CommerceTracker || {};
     
-    window.InfluencerTracker.Utils = {
+    window.CommerceTracker.Utils = {
         // Throttle function
         throttle: function(func, limit) {
             let inThrottle;
@@ -90,7 +90,7 @@
 })(window);
 
 
-/* === src/modules/config.js === */
+/* === src/core/modules/config.js === */
 /*!
  * Influencer Tracker - Configuration Module
  */
@@ -98,10 +98,10 @@
     'use strict';
     
     // Criar namespace se não existir
-    window.InfluencerTracker = window.InfluencerTracker || {};
+    window.CommerceTracker = window.CommerceTracker || {};
     
     // Módulo de Configuração
-    window.InfluencerTracker.Config = {
+    window.CommerceTracker.Config = {
         // Configurações padrão
         defaults: {
             apiEndpoint: '',
@@ -143,23 +143,23 @@
     };
     
     // Auto-inicializar
-    window.InfluencerTracker.Config.init();
+    window.CommerceTracker.Config.init();
     
     console.log('📋 Config module loaded');
     
 })(window);
 
 
-/* === src/modules/consent-manager.js === */
+/* === src/core/modules/consent-manager.js === */
 /*!
  * Influencer Tracker - Consent Manager Module (LGPD)
  */
 (function(window) {
     'use strict';
     
-    window.InfluencerTracker = window.InfluencerTracker || {};
+    window.CommerceTracker = window.CommerceTracker || {};
     
-    window.InfluencerTracker.ConsentManager = {
+    window.CommerceTracker.ConsentManager = {
         // Chaves de armazenamento
         CONSENT_KEY: 'analytics_consent',
         CONSENT_DATE_KEY: 'analytics_consent_date',
@@ -169,7 +169,7 @@
         
         // Verificar se há consentimento
         checkConsent: function() {
-            const config = window.InfluencerTracker.Config;
+            const config = window.CommerceTracker.Config;
             if (!config.get('enableConsentCheck')) return true;
             
             const consent = localStorage.getItem(this.CONSENT_KEY);
@@ -239,16 +239,16 @@
 })(window);
 
 
-/* === src/modules/id-generator.js === */
+/* === src/core/modules/id-generator.js === */
 /*!
  * Influencer Tracker - ID Generator Module
  */
 (function(window) {
     'use strict';
     
-    window.InfluencerTracker = window.InfluencerTracker || {};
+    window.CommerceTracker = window.CommerceTracker || {};
     
-    window.InfluencerTracker.IdGenerator = {
+    window.CommerceTracker.IdGenerator = {
         // Chaves de armazenamento
         USER_ID_KEY: 'inf_user_id',
         SESSION_KEY: 'inf_session',
@@ -275,7 +275,7 @@
         // Obter ou criar Session ID
         getSessionId: function() {
             let sessionData = sessionStorage.getItem(this.SESSION_KEY);
-            const config = window.InfluencerTracker.Config;
+            const config = window.CommerceTracker.Config;
             const sessionTimeout = config.get('sessionTimeout');
             
             if (sessionData) {
@@ -329,16 +329,16 @@
 })(window);
 
 
-/* === src/modules/influencer-detector.js === */
+/* === src/core/modules/influencer-detector.js === */
 /*!
  * Influencer Tracker - Influencer Detector Module
  */
 (function(window) {
     'use strict';
     
-    window.InfluencerTracker = window.InfluencerTracker || {};
+    window.CommerceTracker = window.CommerceTracker || {};
     
-    window.InfluencerTracker.InfluencerDetector = {
+    window.CommerceTracker.InfluencerDetector = {
         // Chave de armazenamento
         ATTRIBUTION_KEY: 'inf_attribution',
         
@@ -456,16 +456,16 @@
 })(window);
 
 
-/* === src/modules/device-fingerprint.js === */
+/* === src/core/modules/device-fingerprint.js === */
 /*!
  * Influencer Tracker - Device Fingerprint Module
  */
 (function(window) {
     'use strict';
     
-    window.InfluencerTracker = window.InfluencerTracker || {};
+    window.CommerceTracker = window.CommerceTracker || {};
     
-    window.InfluencerTracker.DeviceFingerprint = {
+    window.CommerceTracker.DeviceFingerprint = {
         // Cache do fingerprint
         cachedFingerprint: null,
         
@@ -604,16 +604,16 @@
 })(window);
 
 
-/* === src/modules/event-queue.js === */
+/* === src/core/modules/event-queue.js === */
 /*!
  * Influencer Tracker - Event Queue Module
  */
 (function(window) {
     'use strict';
     
-    window.InfluencerTracker = window.InfluencerTracker || {};
+    window.CommerceTracker = window.CommerceTracker || {};
     
-    window.InfluencerTracker.EventQueue = {
+    window.CommerceTracker.EventQueue = {
         // Propriedades da fila
         queue: [],
         flushTimer: null,
@@ -649,7 +649,7 @@
         add: function(event) {
             this.queue.push(event);
             
-            const config = window.InfluencerTracker.Config;
+            const config = window.CommerceTracker.Config;
             const batchSize = config.get('batchSize');
             
             if (this.queue.length >= batchSize) {
@@ -665,7 +665,7 @@
                 clearTimeout(this.flushTimer);
             }
             
-            const config = window.InfluencerTracker.Config;
+            const config = window.CommerceTracker.Config;
             const batchTimeout = config.get('batchTimeout');
             
             this.flushTimer = setTimeout(() => {
@@ -677,7 +677,7 @@
         flush: function() {
             if (this.queue.length === 0) return Promise.resolve();
             
-            const config = window.InfluencerTracker.Config;
+            const config = window.CommerceTracker.Config;
             const apiEndpoint = config.get('apiEndpoint');
             const projectId = config.get('projectId');
             
@@ -700,7 +700,7 @@
         
         // Enviar eventos via fetch
         sendEvents: function(payload, originalEvents) {
-            const config = window.InfluencerTracker.Config;
+            const config = window.CommerceTracker.Config;
             
             return fetch(config.get('apiEndpoint'), {
                 method: 'POST',
@@ -797,16 +797,16 @@
     'use strict';
     
     // Aliases para facilitar uso
-    const Config = window.InfluencerTracker.Config;
-    const ConsentManager = window.InfluencerTracker.ConsentManager;
-    const IdGenerator = window.InfluencerTracker.IdGenerator;
-    const InfluencerDetector = window.InfluencerTracker.InfluencerDetector;
-    const DeviceFingerprint = window.InfluencerTracker.DeviceFingerprint;
-    const EventQueue = window.InfluencerTracker.EventQueue;
-    const Utils = window.InfluencerTracker.Utils;
+    const Config = window.CommerceTracker.Config;
+    const ConsentManager = window.CommerceTracker.ConsentManager;
+    const IdGenerator = window.CommerceTracker.IdGenerator;
+    const InfluencerDetector = window.CommerceTracker.InfluencerDetector;
+    const DeviceFingerprint = window.CommerceTracker.DeviceFingerprint;
+    const EventQueue = window.CommerceTracker.EventQueue;
+    const Utils = window.CommerceTracker.Utils;
     
     // Tracker Principal
-    window.InfluencerTracker.Core = {
+    window.CommerceTracker.Core = {
         // Estado do tracker
         initialized: false,
         startTime: Date.now(),
@@ -1439,8 +1439,8 @@
 
         track: function (eventType, properties = {}) {
             // Use the main tracker
-            if (window.InfluencerTracker && window.InfluencerTracker.track) {
-                window.InfluencerTracker.track(eventType, properties);
+            if (window.CommerceTracker && window.CommerceTracker.track) {
+                window.CommerceTracker.track(eventType, properties);
             } else {
                 console.log('📊 Evento rastreado:', eventType, properties);
             }
@@ -2390,7 +2390,7 @@
         },
 
         trackClickBehavior: function () {
-            document.addEventListener('click', window.InfluencerTracker.Utils.throttle((e) => {
+            document.addEventListener('click', window.CommerceTracker.Utils.throttle((e) => {
                 const element = e.target;
 
                 let clickType = 'generic';
