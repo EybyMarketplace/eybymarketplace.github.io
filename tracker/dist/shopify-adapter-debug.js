@@ -2097,79 +2097,6 @@
 })(window);
 
 
-/* === src/adapters/shopify/behavioral/scroll-tracker.js === */
-/*!
- * Scroll Tracking Module
- */
-
-(function (window) {
-    'use strict';
-
-    window.ShopifyAdapterModules = window.ShopifyAdapterModules || {};
-
-    window.ShopifyAdapterModules.ScrollTracker = {
-        init: function (core) {
-            this.core = core;
-            this.stateManager = core.stateManager;
-            this.setupScrollTracking();
-        },
-
-        setupScrollTracking: function () {
-            console.log('📜 Configurando tracking de scroll');
-
-            window.addEventListener('scroll', window.InfluencerTracker.Utils.throttle(() => {
-                const scrollPercent = Math.round(
-                    (window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100
-                );
-
-                if (scrollPercent > this.stateManager.lastScrollPercent) {
-                    this.stateManager.lastScrollPercent = scrollPercent;
-
-                    if ([25, 50, 75, 90].includes(scrollPercent)) {
-                        const scrollData = {
-                            scroll_percent: scrollPercent,
-                            scroll_depth: window.scrollY,
-                            page_height: document.body.scrollHeight,
-                            viewport_height: window.innerHeight,
-                            timestamp: Date.now()
-                        };
-
-                        this.core.track('scroll_milestone', scrollData);
-                        this.saveScrollMilestone(scrollData);
-                    }
-                }
-            }, 1000));
-        },
-
-        saveScrollMilestone: function (scrollData) {
-            try {
-                const milestones = this.getScrollMilestones();
-                milestones.push({
-                    timestamp: Date.now(),
-                    page: window.location.href,
-                    ...scrollData
-                });
-
-                sessionStorage.setItem('scroll_milestones', JSON.stringify(milestones.slice(-100)));
-            } catch (e) {
-                console.log('Erro ao salvar milestone de scroll:', e);
-            }
-        },
-
-        getScrollMilestones: function () {
-            try {
-                return JSON.parse(sessionStorage.getItem('scroll_milestones') || '[]');
-            } catch (e) {
-                return [];
-            }
-        }
-    };
-
-    console.log('📜 ScrollTracker module loaded');
-
-})(window);
-
-
 /* === src/adapters/shopify/behavioral/interaction-tracker.js === */
 /*!
  * Interaction Tracking Module
@@ -2303,46 +2230,6 @@
     };
 
     console.log('🔒 InteractionTracker module loaded');
-
-})(window);
-
-
-/* === src/adapters/shopify/behavioral/time-tracker.js === */
-/*!
- * Time Tracking Module
- */
-
-(function (window) {
-    'use strict';
-
-    window.ShopifyAdapterModules = window.ShopifyAdapterModules || {};
-
-    window.ShopifyAdapterModules.TimeTracker = {
-        init: function (core) {
-            this.core = core;
-            this.stateManager = core.stateManager;
-            this.setupTimeTracking();
-        },
-
-        setupTimeTracking: function () {
-            console.log('⏱️ Configurando tracking de tempo');
-
-            setInterval(() => {
-                this.stateManager.timeOnPage += 10;
-
-                if ([30, 60, 120, 300, 600].includes(this.stateManager.timeOnPage)) {
-                    this.core.track('time_milestone', {
-                        seconds_on_page: this.stateManager.timeOnPage,
-                        minutes_on_page: Math.round(this.stateManager.timeOnPage / 60),
-                        is_active: document.hasFocus(),
-                        timestamp: Date.now()
-                    });
-                }
-            }, 10000);
-        }
-    };
-
-    console.log('⏱️ TimeTracker module loaded');
 
 })(window);
 
@@ -3190,9 +3077,7 @@
                     cartTracker: modules.CartTracker,
                     productTracker: modules.ProductTracker,
                     apiInterceptor: modules.APIInterceptor,
-                    scrollTracker: modules.ScrollTracker,
                     interactionTracker: modules.InteractionTracker,
-                    timeTracker: modules.TimeTracker,
                     checkoutTracker: modules.CheckoutTracker,
                     formMonitor: modules.FormMonitor,
                     abandonmentTracker: modules.AbandonmentTracker,

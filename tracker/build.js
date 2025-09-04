@@ -52,9 +52,7 @@ class ShopifyAdapterBuilder {
             'src/adapters/shopify/ecommerce/api-interceptor.js',
 
             // Behavioral tracking
-            'src/adapters/shopify/behavioral/scroll-tracker.js',
             'src/adapters/shopify/behavioral/interaction-tracker.js',
-            'src/adapters/shopify/behavioral/time-tracker.js',
 
             // Checkout tracking
             'src/adapters/shopify/checkout/checkout-tracker.js',
