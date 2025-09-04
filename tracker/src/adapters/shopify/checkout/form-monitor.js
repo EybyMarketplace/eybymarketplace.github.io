@@ -12,15 +12,14 @@
 
         init: function (core) {
             this.core = core;
-            this.checkoutTracker = window.ShopifyAdapterModules.CheckoutTracker;
             
             // Aguardar a inicialização do checkoutTracker
-            if (this.checkoutTracker && this.checkoutTracker.isInitialized) {
+            if (this.core.checkouttracker && this.core.checkouttracker.isInitialized) {
                 this.setupFormMonitoring();
             } else {
                 // Aguardar a inicialização
                 const checkInit = () => {
-                    if (this.checkoutTracker && this.checkoutTracker.isInitialized) {
+                    if (this.core.checkouttracker && this.core.checkouttracker.isInitialized) {
                         this.setupFormMonitoring();
                     } else {
                         setTimeout(checkInit, 100);
@@ -53,11 +52,11 @@
         },
 
         getCurrentStep: function() {
-            return this.checkoutTracker?.currentStep || 'unknown';
+            return this.core.checkouttracker?.currentStep || 'unknown';
         },
 
         getCheckoutId: function() {
-            return this.checkoutTracker?.checkoutSessionData?.checkout_id || 'unknown';
+            return this.core.checkouttracker?.checkoutSessionData?.checkout_id || 'unknown';
         },
 
         setupFieldMonitoring: function (element) {

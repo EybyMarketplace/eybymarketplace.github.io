@@ -45,6 +45,8 @@
             
             // Carregar adaptador
             this.adapter = this.loadAdapter(this.platform);
+
+            console.log('🎯 Consentimento: ', ConsentManager.checkConsent());
             
             // Verificar consent antes de iniciar
             if (Config.get('enableConsentCheck') && !ConsentManager.checkConsent()) {

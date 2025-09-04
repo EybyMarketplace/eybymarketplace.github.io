@@ -10,9 +10,6 @@
     window.ShopifyAdapterModules.APIInterceptor = {
         init: function (core) {
             this.core = core;
-            this.cartTracker = window.ShopifyAdapterModules.CartTracker;
-            this.productTracker = window.ShopifyAdapterModules.ProductTracker;
-            this.checkoutTracker = window.ShopifyAdapterModules.CheckoutTracker;
             this.interceptAPIs();
         },
 
@@ -38,28 +35,28 @@
 
                             if (url.includes('/cart/add')) {
                                 const data = await clonedResponse.json();
-                                self.cartTracker.handleCartAdd(data, url);
+                                self.core.carttracker.handleCartAdd(data, url);
                             } else if (url.includes('/cart/update') || url.includes('/cart/change')) {
                                 const data = await clonedResponse.json();
-                                self.cartTracker.handleCartUpdate(data, url);
+                                self.core.carttracker.handleCartUpdate(data, url);
                             } else if (url.includes('/cart/clear')) {
-                                self.cartTracker.handleCartClear(url);
+                                self.core.carttracker.handleCartClear(url);
                             } else if (url.includes('/cart.js') || url.endsWith('/cart')) {
                                 const data = await clonedResponse.json();
-                                self.cartTracker.handleCartData(data, url);
+                                self.core.carttracker.handleCartData(data, url);
                             }
                         }
 
                         if (url.includes('/products/') && url.includes('.js')) {
                             const data = await clonedResponse.json();
-                            self.productTracker.handleProductData(data, url);
+                            self.core.producttracker.handleProductData(data, url);
                         }
 
                         if (url.includes('/checkout') || url.includes('/orders')) {
                             const contentType = response.headers.get('content-type');
                             if (contentType && contentType.includes('application/json')) {
                                 const data = await clonedResponse.json();
-                                self.checkoutTracker.handleCheckoutData(data, url);
+                                self.core.checkouttracker.handleCheckoutData(data, url);
                             }
                         }
 
@@ -84,11 +81,11 @@
                                 const data = JSON.parse(this.responseText);
 
                                 if (url.includes('/cart/add')) {
-                                    self.cartTracker.handleCartAdd(data, url);
+                                    self.core.carttracker.handleCartAdd(data, url);
                                 } else if (url.includes('/cart/update') || url.includes('/cart/change')) {
-                                    self.cartTracker.handleCartUpdate(data, url);
+                                    self.core.carttracker.handleCartUpdate(data, url);
                                 } else if (url.includes('/cart.js')) {
-                                    self.cartTracker.handleCartData(data, url);
+                                    self.core.carttracker.handleCartData(data, url);
                                 }
                             } catch (e) {
                                 // Não é JSON válido

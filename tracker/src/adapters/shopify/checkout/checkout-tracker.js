@@ -17,8 +17,6 @@
 
         init: function (core) {
             this.core = core;
-            this.sessionManager = window.ShopifyAdapterModules.SessionManager;
-            this.dataExtractors = window.ShopifyAdapterModules.DataExtractors;
             this.setupCheckoutTracking();
             this.isInitialized = true;
         },
@@ -120,7 +118,7 @@
                 timestamp: Date.now()
             });
 
-            this.sessionManager.saveCheckoutSession(this.checkoutSessionData);
+            this.core.sessionmanager.saveCheckoutSession(this.checkoutSessionData);
             this.monitorCheckoutSteps();
 
             console.log('✅ Checkout tracking ativo para step:', this.currentStep);
@@ -211,7 +209,7 @@
 
                     this.currentStep = newStep;
                     this.checkoutStartTime = Date.now();
-                    this.sessionManager.saveCheckoutSession(this.checkoutSessionData);
+                    this.core.sessionmanager.saveCheckoutSession(this.checkoutSessionData);
                 }
             });
 
@@ -236,8 +234,8 @@
         handlePurchaseCompletion: function () {
             console.log('🎉 Purchase completed - coletando dados finais');
 
-            const orderData = this.dataExtractors.extractOrderData();
-            const checkoutSession = this.sessionManager.getCheckoutSession();
+            const orderData = this.core.dataextractors.extractOrderData();
+            const checkoutSession = this.core.sessionmanager.getCheckoutSession();
 
             this.core.track('purchase_completed_detailed', {
                 ...orderData,
@@ -249,7 +247,7 @@
                 timestamp: Date.now()
             });
 
-            this.sessionManager.clearCheckoutSession();
+            this.core.sessionmanager.clearCheckoutSession();
         },
 
         checkForAbandonedCheckout: function () {

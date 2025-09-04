@@ -10,7 +10,6 @@
     window.ShopifyAdapterModules.ProductTracker = {
         init: function (core) {
             this.core = core;
-            this.dataExtractors = window.ShopifyAdapterModules.DataExtractors;
             this.setupProductTracking();
         },
 
@@ -48,7 +47,7 @@
         },
 
         trackProductView: function () {
-            const productData = this.dataExtractors.extractProductData();
+            const productData = this.core.dataextractors.extractProductData();
 
             if (productData) {
                 this.core.track('product_view', {
@@ -61,7 +60,7 @@
         },
 
         trackCollectionView: function () {
-            const collectionData = this.dataExtractors.extractCollectionData();
+            const collectionData = this.core.dataextractors.extractCollectionData();
 
             if (collectionData) {
                 this.core.track('collection_view', {
@@ -84,9 +83,9 @@
                 elements.forEach(element => {
                     element.addEventListener('change', () => {
                         this.core.track('variant_selection', {
-                            product_id: this.dataExtractors.getProductId(),
+                            product_id: this.core.dataextractors.getProductId(),
                             variant_id: element.value || element.dataset.variantId,
-                            product_handle: this.dataExtractors.getProductHandle(),
+                            product_handle: this.core.dataextractors.getProductHandle(),
                             selection_method: element.tagName.toLowerCase(),
                             timestamp: Date.now()
                         });

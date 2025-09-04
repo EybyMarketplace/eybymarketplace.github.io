@@ -28,6 +28,8 @@
                 }
             });
 
+            console.log('🔄 AdapterCore: ', this);
+
             this.initialized = true;
             console.log('✅ Shopify Adapter Core inicializado');
         },

@@ -10,8 +10,6 @@
     window.ShopifyAdapterModules.AbandonmentTracker = {
         init: function (core) {
             this.core = core;
-            this.checkoutTracker = window.ShopifyAdapterModules.CheckoutTracker;
-            this.sessionManager = window.ShopifyAdapterModules.SessionManager;
             this.setupAbandonmentTracking();
         },
 
@@ -24,7 +22,7 @@
 
         monitorPageUnload: function () {
             window.addEventListener('beforeunload', (e) => {
-                if (!this.checkoutTracker.abandonmentTracked && this.checkoutTracker.isCheckoutPage()) {
+                if (!this.core.checkouttracker.abandonmentTracked && this.core.checkouttracker.isCheckoutPage()) {
                     this.trackCheckoutAbandonment('page_unload');
                 }
             });
@@ -33,14 +31,14 @@
         monitorExitIntent: function () {
             document.addEventListener('mouseleave', (e) => {
                 if (e.clientY <= 0 &&
-                    !this.checkoutTracker.abandonmentTracked &&
-                    this.checkoutTracker.isCheckoutPage()) {
+                    !this.core.checkouttracker.abandonmentTracked &&
+                    this.core.checkouttracker.isCheckoutPage()) {
 
                     this.core.track('checkout_exit_intent', {
-                        checkout_id: this.checkoutTracker.checkoutSessionData.checkout_id,
-                        step: this.checkoutTracker.currentStep,
-                        time_in_checkout: Date.now() - this.checkoutTracker.checkoutSessionData.start_time,
-                        time_on_current_step: Date.now() - this.checkoutTracker.checkoutStartTime,
+                        checkout_id: this.core.checkouttracker.checkoutSessionData.checkout_id,
+                        step: this.core.checkouttracker.currentStep,
+                        time_in_checkout: Date.now() - this.core.checkouttracker.checkoutSessionData.start_time,
+                        time_on_current_step: Date.now() - this.core.checkouttracker.checkoutStartTime,
                         form_completion: this.calculateFormCompletion(),
                         timestamp: Date.now()
                     });
@@ -54,10 +52,10 @@
             const resetInactivityTimer = () => {
                 clearTimeout(inactivityTimer);
                 inactivityTimer = setTimeout(() => {
-                    if (this.checkoutTracker.isCheckoutPage() && !this.checkoutTracker.abandonmentTracked) {
+                    if (this.core.checkouttracker.isCheckoutPage() && !this.core.checkouttracker.abandonmentTracked) {
                         this.core.track('checkout_inactivity', {
-                            checkout_id: this.checkoutTracker.checkoutSessionData.checkout_id,
-                            step: this.checkoutTracker.currentStep,
+                            checkout_id: this.core.checkouttracker.checkoutSessionData.checkout_id,
+                            step: this.core.checkouttracker.currentStep,
                             inactivity_duration: 300000,
                             timestamp: Date.now()
                         });
@@ -73,24 +71,24 @@
         },
 
         trackCheckoutAbandonment: function (reason) {
-            if (this.checkoutTracker.abandonmentTracked) return;
-            this.checkoutTracker.abandonmentTracked = true;
+            if (this.core.checkouttracker.abandonmentTracked) return;
+            this.core.checkouttracker.abandonmentTracked = true;
 
             console.log('🚪 Checkout abandonado:', reason);
 
             this.core.track('checkout_abandonment', {
-                checkout_id: this.checkoutTracker.checkoutSessionData.checkout_id,
+                checkout_id: this.core.checkouttracker.checkoutSessionData.checkout_id,
                 abandonment_reason: reason,
-                abandonment_step: this.checkoutTracker.currentStep,
-                time_in_checkout: Date.now() - this.checkoutTracker.checkoutSessionData.start_time,
-                time_on_current_step: Date.now() - this.checkoutTracker.checkoutStartTime,
-                steps_completed: this.checkoutTracker.checkoutSteps,
+                abandonment_step: this.core.checkouttracker.currentStep,
+                time_in_checkout: Date.now() - this.core.checkouttracker.checkoutSessionData.start_time,
+                time_on_current_step: Date.now() - this.core.checkouttracker.checkoutStartTime,
+                steps_completed: this.core.checkouttracker.checkoutSteps,
                 form_completion: this.calculateFormCompletion(),
-                cart_value: this.checkoutTracker.getCartValue(),
-                cart_items: this.checkoutTracker.getCartItemCount(),
-                influencer_attribution: this.checkoutTracker.getInfluencerAttribution(),
-                customer_journey: this.checkoutTracker.getCustomerJourney(),
-                device_info: this.checkoutTracker.getDeviceInfo(),
+                cart_value: this.core.checkouttracker.getCartValue(),
+                cart_items: this.core.checkouttracker.getCartItemCount(),
+                influencer_attribution: this.core.checkouttracker.getInfluencerAttribution(),
+                customer_journey: this.core.checkouttracker.getCustomerJourney(),
+                device_info: this.core.checkouttracker.getDeviceInfo(),
                 timestamp: Date.now()
             });
 
@@ -106,12 +104,12 @@
 
         saveAbandonmentData: function () {
             const abandonmentData = {
-                checkout_id: this.checkoutTracker.checkoutSessionData.checkout_id,
+                checkout_id: this.core.checkouttracker.checkoutSessionData.checkout_id,
                 abandonment_time: Date.now(),
-                step: this.checkoutTracker.currentStep,
-                cart_value: this.checkoutTracker.getCartValue(),
+                step: this.core.checkouttracker.currentStep,
+                cart_value: this.core.checkouttracker.getCartValue(),
                 form_completion: this.calculateFormCompletion(),
-                influencer_attribution: this.checkoutTracker.getInfluencerAttribution()
+                influencer_attribution: this.core.checkouttracker.getInfluencerAttribution()
             };
 
             try {

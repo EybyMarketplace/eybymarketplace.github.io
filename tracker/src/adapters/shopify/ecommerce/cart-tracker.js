@@ -10,7 +10,6 @@
     window.ShopifyAdapterModules.CartTracker = {
         init: function (core) {
             this.core = core;
-            this.stateManager = window.ShopifyAdapterModules.StateManager;
             this.setupCartTracking();
         },
 
@@ -117,7 +116,7 @@
                 token: data.token
             };
 
-            const lastState = this.stateManager.lastCartState;
+            const lastState = this.core.statemanager.lastCartState;
 
             if (!lastState ||
                 currentState.items !== lastState.items ||
@@ -157,7 +156,7 @@
                     timestamp: Date.now()
                 });
 
-                this.stateManager.lastCartState = currentState;
+                this.core.statemanager.lastCartState = currentState;
             }
         },
 

@@ -837,6 +837,8 @@
             
             // Carregar adaptador
             this.adapter = this.loadAdapter(this.platform);
+
+            console.log('🎯 Consentimento: ', ConsentManager.checkConsent());
             
             // Verificar consent antes de iniciar
             if (Config.get('enableConsentCheck') && !ConsentManager.checkConsent()) {
@@ -1433,6 +1435,8 @@
                 }
             });
 
+            console.log('🔄 AdapterCore: ', this);
+
             this.initialized = true;
             console.log('✅ Shopify Adapter Core inicializado');
         },
@@ -1465,7 +1469,6 @@
     window.ShopifyAdapterModules.CartTracker = {
         init: function (core) {
             this.core = core;
-            this.stateManager = window.ShopifyAdapterModules.StateManager;
             this.setupCartTracking();
         },
 
@@ -1572,7 +1575,7 @@
                 token: data.token
             };
 
-            const lastState = this.stateManager.lastCartState;
+            const lastState = this.core.statemanager.lastCartState;
 
             if (!lastState ||
                 currentState.items !== lastState.items ||
@@ -1612,7 +1615,7 @@
                     timestamp: Date.now()
                 });
 
-                this.stateManager.lastCartState = currentState;
+                this.core.statemanager.lastCartState = currentState;
             }
         },
 
@@ -1657,7 +1660,6 @@
     window.ShopifyAdapterModules.ProductTracker = {
         init: function (core) {
             this.core = core;
-            this.dataExtractors = window.ShopifyAdapterModules.DataExtractors;
             this.setupProductTracking();
         },
 
@@ -1695,7 +1697,7 @@
         },
 
         trackProductView: function () {
-            const productData = this.dataExtractors.extractProductData();
+            const productData = this.core.dataextractors.extractProductData();
 
             if (productData) {
                 this.core.track('product_view', {
@@ -1708,7 +1710,7 @@
         },
 
         trackCollectionView: function () {
-            const collectionData = this.dataExtractors.extractCollectionData();
+            const collectionData = this.core.dataextractors.extractCollectionData();
 
             if (collectionData) {
                 this.core.track('collection_view', {
@@ -1731,9 +1733,9 @@
                 elements.forEach(element => {
                     element.addEventListener('change', () => {
                         this.core.track('variant_selection', {
-                            product_id: this.dataExtractors.getProductId(),
+                            product_id: this.core.dataextractors.getProductId(),
                             variant_id: element.value || element.dataset.variantId,
-                            product_handle: this.dataExtractors.getProductHandle(),
+                            product_handle: this.core.dataextractors.getProductHandle(),
                             selection_method: element.tagName.toLowerCase(),
                             timestamp: Date.now()
                         });
@@ -1810,8 +1812,6 @@
 
         init: function (core) {
             this.core = core;
-            this.sessionManager = window.ShopifyAdapterModules.SessionManager;
-            this.dataExtractors = window.ShopifyAdapterModules.DataExtractors;
             this.setupCheckoutTracking();
             this.isInitialized = true;
         },
@@ -1913,7 +1913,7 @@
                 timestamp: Date.now()
             });
 
-            this.sessionManager.saveCheckoutSession(this.checkoutSessionData);
+            this.core.sessionmanager.saveCheckoutSession(this.checkoutSessionData);
             this.monitorCheckoutSteps();
 
             console.log('✅ Checkout tracking ativo para step:', this.currentStep);
@@ -2004,7 +2004,7 @@
 
                     this.currentStep = newStep;
                     this.checkoutStartTime = Date.now();
-                    this.sessionManager.saveCheckoutSession(this.checkoutSessionData);
+                    this.core.sessionmanager.saveCheckoutSession(this.checkoutSessionData);
                 }
             });
 
@@ -2029,8 +2029,8 @@
         handlePurchaseCompletion: function () {
             console.log('🎉 Purchase completed - coletando dados finais');
 
-            const orderData = this.dataExtractors.extractOrderData();
-            const checkoutSession = this.sessionManager.getCheckoutSession();
+            const orderData = this.core.dataextractors.extractOrderData();
+            const checkoutSession = this.core.sessionmanager.getCheckoutSession();
 
             this.core.track('purchase_completed_detailed', {
                 ...orderData,
@@ -2042,7 +2042,7 @@
                 timestamp: Date.now()
             });
 
-            this.sessionManager.clearCheckoutSession();
+            this.core.sessionmanager.clearCheckoutSession();
         },
 
         checkForAbandonedCheckout: function () {
@@ -2268,9 +2268,6 @@
     window.ShopifyAdapterModules.APIInterceptor = {
         init: function (core) {
             this.core = core;
-            this.cartTracker = window.ShopifyAdapterModules.CartTracker;
-            this.productTracker = window.ShopifyAdapterModules.ProductTracker;
-            this.checkoutTracker = window.ShopifyAdapterModules.CheckoutTracker;
             this.interceptAPIs();
         },
 
@@ -2296,28 +2293,28 @@
 
                             if (url.includes('/cart/add')) {
                                 const data = await clonedResponse.json();
-                                self.cartTracker.handleCartAdd(data, url);
+                                self.core.carttracker.handleCartAdd(data, url);
                             } else if (url.includes('/cart/update') || url.includes('/cart/change')) {
                                 const data = await clonedResponse.json();
-                                self.cartTracker.handleCartUpdate(data, url);
+                                self.core.carttracker.handleCartUpdate(data, url);
                             } else if (url.includes('/cart/clear')) {
-                                self.cartTracker.handleCartClear(url);
+                                self.core.carttracker.handleCartClear(url);
                             } else if (url.includes('/cart.js') || url.endsWith('/cart')) {
                                 const data = await clonedResponse.json();
-                                self.cartTracker.handleCartData(data, url);
+                                self.core.carttracker.handleCartData(data, url);
                             }
                         }
 
                         if (url.includes('/products/') && url.includes('.js')) {
                             const data = await clonedResponse.json();
-                            self.productTracker.handleProductData(data, url);
+                            self.core.producttracker.handleProductData(data, url);
                         }
 
                         if (url.includes('/checkout') || url.includes('/orders')) {
                             const contentType = response.headers.get('content-type');
                             if (contentType && contentType.includes('application/json')) {
                                 const data = await clonedResponse.json();
-                                self.checkoutTracker.handleCheckoutData(data, url);
+                                self.core.checkouttracker.handleCheckoutData(data, url);
                             }
                         }
 
@@ -2342,11 +2339,11 @@
                                 const data = JSON.parse(this.responseText);
 
                                 if (url.includes('/cart/add')) {
-                                    self.cartTracker.handleCartAdd(data, url);
+                                    self.core.carttracker.handleCartAdd(data, url);
                                 } else if (url.includes('/cart/update') || url.includes('/cart/change')) {
-                                    self.cartTracker.handleCartUpdate(data, url);
+                                    self.core.carttracker.handleCartUpdate(data, url);
                                 } else if (url.includes('/cart.js')) {
-                                    self.cartTracker.handleCartData(data, url);
+                                    self.core.carttracker.handleCartData(data, url);
                                 }
                             } catch (e) {
                                 // Não é JSON válido
@@ -2502,15 +2499,14 @@
 
         init: function (core) {
             this.core = core;
-            this.checkoutTracker = window.ShopifyAdapterModules.CheckoutTracker;
             
             // Aguardar a inicialização do checkoutTracker
-            if (this.checkoutTracker && this.checkoutTracker.isInitialized) {
+            if (this.core.checkouttracker && this.core.checkouttracker.isInitialized) {
                 this.setupFormMonitoring();
             } else {
                 // Aguardar a inicialização
                 const checkInit = () => {
-                    if (this.checkoutTracker && this.checkoutTracker.isInitialized) {
+                    if (this.core.checkouttracker && this.core.checkouttracker.isInitialized) {
                         this.setupFormMonitoring();
                     } else {
                         setTimeout(checkInit, 100);
@@ -2543,11 +2539,11 @@
         },
 
         getCurrentStep: function() {
-            return this.checkoutTracker?.currentStep || 'unknown';
+            return this.core.checkouttracker?.currentStep || 'unknown';
         },
 
         getCheckoutId: function() {
-            return this.checkoutTracker?.checkoutSessionData?.checkout_id || 'unknown';
+            return this.core.checkouttracker?.checkoutSessionData?.checkout_id || 'unknown';
         },
 
         setupFieldMonitoring: function (element) {
@@ -2714,8 +2710,6 @@
     window.ShopifyAdapterModules.AbandonmentTracker = {
         init: function (core) {
             this.core = core;
-            this.checkoutTracker = window.ShopifyAdapterModules.CheckoutTracker;
-            this.sessionManager = window.ShopifyAdapterModules.SessionManager;
             this.setupAbandonmentTracking();
         },
 
@@ -2728,7 +2722,7 @@
 
         monitorPageUnload: function () {
             window.addEventListener('beforeunload', (e) => {
-                if (!this.checkoutTracker.abandonmentTracked && this.checkoutTracker.isCheckoutPage()) {
+                if (!this.core.checkouttracker.abandonmentTracked && this.core.checkouttracker.isCheckoutPage()) {
                     this.trackCheckoutAbandonment('page_unload');
                 }
             });
@@ -2737,14 +2731,14 @@
         monitorExitIntent: function () {
             document.addEventListener('mouseleave', (e) => {
                 if (e.clientY <= 0 &&
-                    !this.checkoutTracker.abandonmentTracked &&
-                    this.checkoutTracker.isCheckoutPage()) {
+                    !this.core.checkouttracker.abandonmentTracked &&
+                    this.core.checkouttracker.isCheckoutPage()) {
 
                     this.core.track('checkout_exit_intent', {
-                        checkout_id: this.checkoutTracker.checkoutSessionData.checkout_id,
-                        step: this.checkoutTracker.currentStep,
-                        time_in_checkout: Date.now() - this.checkoutTracker.checkoutSessionData.start_time,
-                        time_on_current_step: Date.now() - this.checkoutTracker.checkoutStartTime,
+                        checkout_id: this.core.checkouttracker.checkoutSessionData.checkout_id,
+                        step: this.core.checkouttracker.currentStep,
+                        time_in_checkout: Date.now() - this.core.checkouttracker.checkoutSessionData.start_time,
+                        time_on_current_step: Date.now() - this.core.checkouttracker.checkoutStartTime,
                         form_completion: this.calculateFormCompletion(),
                         timestamp: Date.now()
                     });
@@ -2758,10 +2752,10 @@
             const resetInactivityTimer = () => {
                 clearTimeout(inactivityTimer);
                 inactivityTimer = setTimeout(() => {
-                    if (this.checkoutTracker.isCheckoutPage() && !this.checkoutTracker.abandonmentTracked) {
+                    if (this.core.checkouttracker.isCheckoutPage() && !this.core.checkouttracker.abandonmentTracked) {
                         this.core.track('checkout_inactivity', {
-                            checkout_id: this.checkoutTracker.checkoutSessionData.checkout_id,
-                            step: this.checkoutTracker.currentStep,
+                            checkout_id: this.core.checkouttracker.checkoutSessionData.checkout_id,
+                            step: this.core.checkouttracker.currentStep,
                             inactivity_duration: 300000,
                             timestamp: Date.now()
                         });
@@ -2777,24 +2771,24 @@
         },
 
         trackCheckoutAbandonment: function (reason) {
-            if (this.checkoutTracker.abandonmentTracked) return;
-            this.checkoutTracker.abandonmentTracked = true;
+            if (this.core.checkouttracker.abandonmentTracked) return;
+            this.core.checkouttracker.abandonmentTracked = true;
 
             console.log('🚪 Checkout abandonado:', reason);
 
             this.core.track('checkout_abandonment', {
-                checkout_id: this.checkoutTracker.checkoutSessionData.checkout_id,
+                checkout_id: this.core.checkouttracker.checkoutSessionData.checkout_id,
                 abandonment_reason: reason,
-                abandonment_step: this.checkoutTracker.currentStep,
-                time_in_checkout: Date.now() - this.checkoutTracker.checkoutSessionData.start_time,
-                time_on_current_step: Date.now() - this.checkoutTracker.checkoutStartTime,
-                steps_completed: this.checkoutTracker.checkoutSteps,
+                abandonment_step: this.core.checkouttracker.currentStep,
+                time_in_checkout: Date.now() - this.core.checkouttracker.checkoutSessionData.start_time,
+                time_on_current_step: Date.now() - this.core.checkouttracker.checkoutStartTime,
+                steps_completed: this.core.checkouttracker.checkoutSteps,
                 form_completion: this.calculateFormCompletion(),
-                cart_value: this.checkoutTracker.getCartValue(),
-                cart_items: this.checkoutTracker.getCartItemCount(),
-                influencer_attribution: this.checkoutTracker.getInfluencerAttribution(),
-                customer_journey: this.checkoutTracker.getCustomerJourney(),
-                device_info: this.checkoutTracker.getDeviceInfo(),
+                cart_value: this.core.checkouttracker.getCartValue(),
+                cart_items: this.core.checkouttracker.getCartItemCount(),
+                influencer_attribution: this.core.checkouttracker.getInfluencerAttribution(),
+                customer_journey: this.core.checkouttracker.getCustomerJourney(),
+                device_info: this.core.checkouttracker.getDeviceInfo(),
                 timestamp: Date.now()
             });
 
@@ -2810,12 +2804,12 @@
 
         saveAbandonmentData: function () {
             const abandonmentData = {
-                checkout_id: this.checkoutTracker.checkoutSessionData.checkout_id,
+                checkout_id: this.core.checkouttracker.checkoutSessionData.checkout_id,
                 abandonment_time: Date.now(),
-                step: this.checkoutTracker.currentStep,
-                cart_value: this.checkoutTracker.getCartValue(),
+                step: this.core.checkouttracker.currentStep,
+                cart_value: this.core.checkouttracker.getCartValue(),
                 form_completion: this.calculateFormCompletion(),
-                influencer_attribution: this.checkoutTracker.getInfluencerAttribution()
+                influencer_attribution: this.core.checkouttracker.getInfluencerAttribution()
             };
 
             try {
