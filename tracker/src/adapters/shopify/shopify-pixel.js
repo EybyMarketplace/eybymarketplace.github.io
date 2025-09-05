@@ -2,22 +2,22 @@
 (function() {
     // Carrega o script externo
     const script = document.createElement('script');
-    script.src = 'https://eybymarketplace.github.io/tracker/dist/shopify-tracker.js';
+    script.src = 'https://eybymarketplace.github.io/tracker/dist/commerce-tracker.min.js';
     script.async = true;
     
     script.onload = function() {
 
-        const config = {
-            apiEndpoint: 'https://rhino-bursting-cardinal.ngrok-free.app/api/tracking/events',
-            projectId: window.CommerceTracker.IdGenerator.getProjectId(),
-            enableConsentCheck: false,
-            batchSize: 5,
-            batchTimeout: 3000,
-        };
 
         // Inicializa o tracker quando o script carregar
         if (window.CommerceTracker) {
-            window.CommerceTracker.Core.init(config);
+            window.CommerceTracker.Core.init({
+                apiEndpoint: 'https://rhino-bursting-cardinal.ngrok-free.app/api/tracking/events',
+                projectId: window.CommerceTracker.IdGenerator.getProjectId(),
+                enableConsentCheck: false,
+                platform: 'shopify',
+                batchSize: 5,
+                batchTimeout: 3000,
+            });
             
             // Configura os event listeners do Shopify
             setupShopifyEvents();

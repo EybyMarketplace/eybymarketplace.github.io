@@ -160,6 +160,7 @@
             apiEndpoint: '',
             projectId: '',
             enableConsentCheck: true,
+            platform: '',
             batchSize: 10,
             batchTimeout: 3000,
             sessionTimeout: 30 * 60 * 1000, // 30 minutos
@@ -433,7 +434,8 @@
             'yandex.': 'Yandex',
             'baidu.com': 'Baidu'
         },
-        
+
+        cachedTrafficData: null,
         
         // Extrai informações de UTM parameters
         getUtmParams: () => {
@@ -556,13 +558,18 @@
 
         // Função principal que coleta todas as informações
         getTrafficData() {
+
+            if (this.cachedTrafficData) {
+                return this.cachedTrafficData;
+            }
+            
             const utmParams = this.getUtmParams();
             const affiliateInfo = this.getAffiliateInfo();
             const trafficSource = this.getTrafficSource();
             const facebookInfo = this.getFacebookCampaignInfo();
             const googleInfo = this.getGoogleCampaignInfo();
 
-            return {
+            let trafficData = {
                 // Informações de UTM
                 utm_data: utmParams,
 
@@ -582,6 +589,9 @@
                 user_agent: navigator.userAgent,
                 timestamp: Date.now()
             };
+
+            this.cachedTrafficData = trafficData;
+            return trafficData;
         }
     };
     
@@ -969,8 +979,7 @@
         // Detectar plataforma de e-commerce
         detectPlatform: function() {
             // Shopify
-            if (window.Shopify || window.shopifyData ||
-                document.querySelector('meta[name="shopify-checkout-api-token"]')) {
+            if (Config.get('platform') === 'shopify') {
                 return 'shopify';
             }
             
@@ -986,17 +995,21 @@
         // Iniciar tracking
         startTracking: function() {
             this.initialized = true;
+            let sendTrafficData = false;
+
+            if (sessionStorage.getItem("isFirstPageView")) {
+                sessionStorage.setItem("isFirstPageView", "false");
+                sendTrafficData = true;
+            }
             
-            // Detectar influenciador
-            const trafficData = TrafficDataDetector.getTrafficData();
-            
-            // Evento de page view
             this.track('page_view', {
                 page_title: document.title,
                 referrer: document.referrer,
                 device_type: Utils.getDeviceType(),
-                viewport: DeviceFingerprint.generate().viewport,
-                traffic_attribution: trafficData
+                ...(sendTrafficData && {
+                    viewport: DeviceFingerprint.generate().viewport,
+                    traffic_attribution: TrafficDataDetector.getTrafficData()
+                })
             });
             
             // Configurar listeners universais

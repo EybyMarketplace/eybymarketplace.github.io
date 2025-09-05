@@ -43,7 +43,8 @@
             'yandex.': 'Yandex',
             'baidu.com': 'Baidu'
         },
-        
+
+        cachedTrafficData: null,
         
         // Extrai informações de UTM parameters
         getUtmParams: () => {
@@ -166,13 +167,18 @@
 
         // Função principal que coleta todas as informações
         getTrafficData() {
+
+            if (this.cachedTrafficData) {
+                return this.cachedTrafficData;
+            }
+            
             const utmParams = this.getUtmParams();
             const affiliateInfo = this.getAffiliateInfo();
             const trafficSource = this.getTrafficSource();
             const facebookInfo = this.getFacebookCampaignInfo();
             const googleInfo = this.getGoogleCampaignInfo();
 
-            return {
+            let trafficData = {
                 // Informações de UTM
                 utm_data: utmParams,
 
@@ -192,6 +198,9 @@
                 user_agent: navigator.userAgent,
                 timestamp: Date.now()
             };
+
+            this.cachedTrafficData = trafficData;
+            return trafficData;
         }
     };
     

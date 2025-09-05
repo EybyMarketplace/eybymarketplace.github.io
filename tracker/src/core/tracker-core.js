@@ -60,8 +60,7 @@
         // Detectar plataforma de e-commerce
         detectPlatform: function() {
             // Shopify
-            if (window.Shopify || window.shopifyData ||
-                document.querySelector('meta[name="shopify-checkout-api-token"]')) {
+            if (Config.get('platform') === 'shopify') {
                 return 'shopify';
             }
             
@@ -77,17 +76,21 @@
         // Iniciar tracking
         startTracking: function() {
             this.initialized = true;
+            let sendTrafficData = false;
+
+            if (sessionStorage.getItem("isFirstPageView")) {
+                sessionStorage.setItem("isFirstPageView", "false");
+                sendTrafficData = true;
+            }
             
-            // Detectar influenciador
-            const trafficData = TrafficDataDetector.getTrafficData();
-            
-            // Evento de page view
             this.track('page_view', {
                 page_title: document.title,
                 referrer: document.referrer,
                 device_type: Utils.getDeviceType(),
-                viewport: DeviceFingerprint.generate().viewport,
-                traffic_attribution: trafficData
+                ...(sendTrafficData && {
+                    viewport: DeviceFingerprint.generate().viewport,
+                    traffic_attribution: TrafficDataDetector.getTrafficData()
+                })
             });
             
             // Configurar listeners universais
