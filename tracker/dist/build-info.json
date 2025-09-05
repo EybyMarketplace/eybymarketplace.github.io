@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "buildDate": "2025-09-05T21:00:01.878Z",
+  "buildDate": "2025-09-05T21:08:19.651Z",
   "files": [
     "src/utils/utils.js",
     "src/core/modules/config.js",
@@ -13,7 +13,7 @@
     "src/core/tracker-core.js"
   ],
   "sizes": {
-    "debug": 37966,
-    "minified": 20656
+    "debug": 37956,
+    "minified": 20646
   }
 }

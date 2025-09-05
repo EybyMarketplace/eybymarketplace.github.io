@@ -70,7 +70,7 @@
         },
 
         // Detecta fonte de tráfego pelo referrer
-        getTrafficSource: () => {
+        getTrafficSource() {
             const referrer = document.referrer.toLowerCase();
 
             if (!referrer) {
@@ -165,7 +165,7 @@
         },
 
         // Função principal que coleta todas as informações
-        getTrafficData: () => {
+        getTrafficData() {
             const utmParams = this.getUtmParams();
             const affiliateInfo = this.getAffiliateInfo();
             const trafficSource = this.getTrafficSource();
