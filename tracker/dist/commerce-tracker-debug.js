@@ -880,7 +880,7 @@
                 barcode: variant.barcode,
                 weight: variant.weight,
                 weight_unit: variant.weightUnit,
-                product: extractProductData(variant.product)
+                product: this.extractProductData(variant.product)
             };
         },
 
@@ -892,7 +892,7 @@
                 id: item.id,
                 quantity: item.quantity,
                 title: item.title,
-                variant: extractVariantData(item.variant),
+                variant: this.extractVariantData(item.variant),
                 line_price: parseFloat(item.variant.price.amount) * item.quantity,
                 discounts: item.discounts || [],
                 properties: item.properties || {}
