@@ -476,7 +476,7 @@
                 const domain = referrerUrl.hostname.toLowerCase();
 
                 // Verifica se é rede social
-                for (const [key, name] of Object.entries(TrafficTracker.socialMediaSources)) {
+                for (const [key, name] of Object.entries(this.socialMediaSources)) {
                     if (domain.includes(key)) {
                         return {
                             source_type: 'social',
@@ -488,7 +488,7 @@
                 }
 
                 // Verifica se é mecanismo de busca
-                for (const [key, name] of Object.entries(TrafficTracker.searchEngines)) {
+                for (const [key, name] of Object.entries(this.searchEngines)) {
                     if (domain.includes(key)) {
                         return {
                             source_type: 'search',
@@ -556,11 +556,11 @@
 
         // Função principal que coleta todas as informações
         getTrafficData: () => {
-            const utmParams = TrafficTracker.getUtmParams();
-            const affiliateInfo = TrafficTracker.getAffiliateInfo();
-            const trafficSource = TrafficTracker.getTrafficSource();
-            const facebookInfo = TrafficTracker.getFacebookCampaignInfo();
-            const googleInfo = TrafficTracker.getGoogleCampaignInfo();
+            const utmParams = this.getUtmParams();
+            const affiliateInfo = this.getAffiliateInfo();
+            const trafficSource = this.getTrafficSource();
+            const facebookInfo = this.getFacebookCampaignInfo();
+            const googleInfo = this.getGoogleCampaignInfo();
 
             return {
                 // Informações de UTM
