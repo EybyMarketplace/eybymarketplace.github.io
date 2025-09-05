@@ -78,8 +78,8 @@
             this.initialized = true;
             let sendTrafficData = false;
 
-            if (sessionStorage.getItem("isFirstPageView")) {
-                sessionStorage.setItem("isFirstPageView", "false");
+            if (!sessionStorage.getItem("passedFirstPageView")) { 
+                sessionStorage.setItem("passedFirstPageView", "true");
                 sendTrafficData = true;
             }
             
