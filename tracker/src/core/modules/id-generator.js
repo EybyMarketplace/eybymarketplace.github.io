@@ -10,6 +10,11 @@
         // Chaves de armazenamento
         USER_ID_KEY: 'inf_user_id',
         SESSION_KEY: 'inf_session',
+
+        getProjectId: function() {
+            const hostname = window.location.hostname;
+            return hostname.replace('.myshopify.com', '').replace(/\./g, '-');
+        },
         
         // Gerar UUID v4
         generateUUID: function() {

@@ -8,7 +8,7 @@
     const Config = window.CommerceTracker.Config;
     const ConsentManager = window.CommerceTracker.ConsentManager;
     const IdGenerator = window.CommerceTracker.IdGenerator;
-    const InfluencerDetector = window.CommerceTracker.InfluencerDetector;
+    const TrafficDataDetector = window.CommerceTracker.TrafficDataDetector;
     const DeviceFingerprint = window.CommerceTracker.DeviceFingerprint;
     const EventQueue = window.CommerceTracker.EventQueue;
     const Utils = window.CommerceTracker.Utils;
@@ -79,16 +79,15 @@
             this.initialized = true;
             
             // Detectar influenciador
-            const influencerData = InfluencerDetector.detectInfluencer();
+            const trafficData = TrafficDataDetector.getTrafficData();
             
             // Evento de page view
             this.track('page_view', {
-                page_url: window.location.href,
                 page_title: document.title,
                 referrer: document.referrer,
-                influencer_data: influencerData,
                 device_type: Utils.getDeviceType(),
-                viewport: DeviceFingerprint.generate().viewport
+                viewport: DeviceFingerprint.generate().viewport,
+                traffic_attribution: trafficData
             });
             
             // Configurar listeners universais
@@ -127,7 +126,7 @@
                 timestamp: Date.now(),
                 user_id: IdGenerator.getUserId(),
                 session_id: IdGenerator.getSessionId(),
-                page_url: window.location.href,
+                page_url: Utils.getCleanPageUrl(),
                 device_fingerprint: DeviceFingerprint.generate(),
                 platform: this.platform,
                 properties: Utils.deepMerge({}, properties)
@@ -196,23 +195,6 @@
             });
         },
         
-        // Métodos públicos para tracking manual
-        trackPurchase: function(orderData) {
-            this.track('purchase', {
-                order_id: orderData.orderId,
-                total_value: orderData.totalValue,
-                currency: orderData.currency || 'BRL',
-                items: orderData.items,
-                coupon_code: orderData.couponCode,
-                payment_method: orderData.paymentMethod,
-                influencer_attribution: InfluencerDetector.getSavedAttribution()
-            });
-        },
-        
-        trackCustomEvent: function(eventName, properties) {
-            this.track(Utils.sanitizeString(eventName), properties);
-        },
-        
         // Obter informações do tracker
         getInfo: function() {
             return {
@@ -222,7 +204,7 @@
                 userId: IdGenerator.getUserId(),
                 sessionId: IdGenerator.getSessionId(),
                 queueSize: EventQueue.getQueueSize(),
-                hasAttribution: InfluencerDetector.hasActiveAttribution()
+                hasAttribution: TrafficDataDetector.hasActiveAttribution()
             };
         }
     };

@@ -30,41 +30,36 @@ class ShopifyAdapterBuilder {
             // Core modules
             'src/core/modules/consent-manager.js',
             'src/core/modules/id-generator.js',
-            'src/core/modules/influencer-detector.js',
+            'src/core/modules/traffic-data-detector.js',
             'src/core/modules/device-fingerprint.js',
             'src/core/modules/event-queue.js',
+            'src/core/modules/shopify-data-extractors.js',
 
             // Tracker core
             'src/core/tracker-core.js',
 
             // Shopify Utilities
-            'src/adapters/shopify/utils/data-extractors.js',
-            'src/adapters/shopify/utils/session-manager.js',
+            // 'src/adapters/shopify/utils/session-manager.js',
 
             // Shopify adapter core
-            'src/adapters/shopify/core/state-manager.js',
-            'src/adapters/shopify/core/adapter-core.js',
+            // 'src/adapters/shopify/core/state-manager.js',
+            // 'src/adapters/shopify/core/adapter-core.js',
 
-            // E-commerce tracking
-            'src/adapters/shopify/ecommerce/cart-tracker.js',
-            'src/adapters/shopify/ecommerce/product-tracker.js',
-            'src/adapters/shopify/checkout/checkout-tracker.js',
-            'src/adapters/shopify/ecommerce/api-interceptor.js',
+            // // E-commerce tracking
+            // 'src/adapters/shopify/ecommerce/cart-tracker.js',
+            // 'src/adapters/shopify/ecommerce/product-tracker.js',
+            // 'src/adapters/shopify/checkout/checkout-tracker.js',
+            // 'src/adapters/shopify/ecommerce/api-interceptor.js',
 
-            // Behavioral tracking
-            'src/adapters/shopify/behavioral/interaction-tracker.js',
+            // // Behavioral tracking
+            // 'src/adapters/shopify/behavioral/interaction-tracker.js',
 
-            // Checkout tracking
-            'src/adapters/shopify/checkout/form-monitor.js',
-            'src/adapters/shopify/checkout/abandonment-tracker.js',
-
-            // AI components
-            // 'src/ai/ai-data-collector.js',
+            // // Checkout tracking
+            // 'src/adapters/shopify/checkout/form-monitor.js',
+            // 'src/adapters/shopify/checkout/abandonment-tracker.js',
 
             // Main entry point (MUST BE LAST)
-            'src/adapters/shopify/shopify-adapter.js',
-
-
+            // 'src/adapters/shopify/shopify-adapter.js',
 
         ];
 

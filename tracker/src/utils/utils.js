@@ -71,6 +71,59 @@
             }
             
             return result;
+        },
+
+        // Função para limpar a URL do web pixel
+        getCleanPageUrl: function() {
+            let url = window.location.href;
+
+            try {
+                // Remove prefixos do web pixel
+                const webPixelPattern = /\/web-pixels@[^\/]+\/[^\/]+\/web-pixel-[^\/]+@[^\/]+\/sandbox\/modern/;
+                url = url.replace(webPixelPattern, '');
+
+                // Se a URL ainda contém o domínio do Shopify, reconstrói a URL limpa
+                const urlObj = new URL(url);
+
+                // Remove parâmetros de tracking comuns
+                const trackingParams = [
+                    'pr_prod_strat',
+                    'pr_rec_id',
+                    'pr_rec_pid',
+                    'pr_ref_pid',
+                    'pr_seq',
+                    'utm_source',
+                    'utm_medium',
+                    'utm_campaign',
+                    'utm_term',
+                    'utm_content',
+                    'fbclid',
+                    'gclid',
+                    'msclkid',
+                    '_ga',
+                    '_gl'
+                ];
+
+                trackingParams.forEach(param => {
+                    urlObj.searchParams.delete(param);
+                });
+
+                // Reconstrói a URL limpa
+                let cleanUrl = `${urlObj.origin}${urlObj.pathname}`;
+
+                // Adiciona parâmetros de query restantes se existirem
+                const remainingParams = urlObj.searchParams.toString();
+                if (remainingParams) {
+                    cleanUrl += `?${remainingParams}`;
+                }
+
+                return cleanUrl;
+
+            } catch (error) {
+                console.warn('Erro ao limpar URL:', error);
+                // Fallback: retorna pelo menos o pathname
+                return `${window.location.origin}${window.location.pathname}`;
+            }
         }
     };
     
