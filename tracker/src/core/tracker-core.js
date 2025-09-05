@@ -88,7 +88,6 @@
                 referrer: document.referrer,
                 device_type: Utils.getDeviceType(),
                 ...(sendTrafficData && {
-                    viewport: DeviceFingerprint.generate().viewport,
                     traffic_attribution: TrafficDataDetector.getTrafficData()
                 })
             });
