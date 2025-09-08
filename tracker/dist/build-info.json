@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "buildDate": "2025-09-08T21:52:38.250Z",
+  "buildDate": "2025-09-08T21:55:04.970Z",
   "files": [
     "src/utils/utils.js",
     "src/core/modules/config.js",
@@ -9,12 +9,11 @@
     "src/core/modules/traffic-data-detector.js",
     "src/core/modules/device-fingerprint.js",
     "src/core/modules/event-queue.js",
-    "src/core/modules/geolocation-manager.js",
     "src/core/modules/shopify-data-extractors.js",
     "src/core/tracker-core.js"
   ],
   "sizes": {
-    "debug": 39302,
-    "minified": 20992
+    "debug": 37831,
+    "minified": 20228
   }
 }
