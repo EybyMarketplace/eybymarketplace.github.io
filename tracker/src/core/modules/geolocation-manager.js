@@ -7,10 +7,8 @@
     window.CommerceTracker = window.CommerceTracker || {};
 
     window.CommerceTracker.GeolocationManager = {
-        // Get approximate location without consent popup
         getApproximateLocation: function() {
             return new Promise((resolve, reject) => {
-                // Check if user has previously opted out
                 const optOut = localStorage.getItem('location_opt_out');
                 if (optOut) {
                     reject(new Error('User has opted out of location tracking'));

@@ -92,26 +92,32 @@
             };
 
             if (sendTrafficData) {
-                // Handle async geolocation
-                GeolocationManager.getApproximateLocation()
-                    .then(location => {
-                        this.track('page_view:entry_point', {
-                            ...baseEventData,
-                            traffic_attribution: TrafficDataDetector.getTrafficData(),
-                            location: location
+                try {
+                    // Handle async geolocation
+                    GeolocationManager.getApproximateLocation()
+                        .then(location => {
+                            this.track('page_view:entry_point', {
+                                ...baseEventData,
+                                traffic_attribution: TrafficDataDetector.getTrafficData(),
+                                location: location
+                            });
+                        })
+                        .catch(error => {
+                            console.warn('Could not get location:', error.message);
+                            // Track without location
+                            this.track('page_view:entry_point', {
+                                ...baseEventData,
+                                traffic_attribution: TrafficDataDetector.getTrafficData()
+                            });
                         });
-                    })
-                    .catch(error => {
-                        console.warn('Could not get location:', error.message);
-                        // Track without location
-                        this.track('page_view:entry_point', {
-                            ...baseEventData,
-                            traffic_attribution: TrafficDataDetector.getTrafficData()
-                        });
+                } catch (error) {
+                    console.error('Error in geolocation call:', error);
+                    // Fallback sem geolocalização
+                    this.track('page_view:entry_point', {
+                        ...baseEventData,
+                        traffic_attribution: TrafficDataDetector.getTrafficData()
                     });
-            } else {
-                // No traffic data needed, track immediately
-                this.track('page_view', baseEventData);
+                }
             }
             
             // Configurar listeners universais

@@ -822,10 +822,8 @@
     window.CommerceTracker = window.CommerceTracker || {};
 
     window.CommerceTracker.GeolocationManager = {
-        // Get approximate location without consent popup
         getApproximateLocation: function() {
             return new Promise((resolve, reject) => {
-                // Check if user has previously opted out
                 const optOut = localStorage.getItem('location_opt_out');
                 if (optOut) {
                     reject(new Error('User has opted out of location tracking'));
@@ -1026,26 +1024,32 @@
             };
 
             if (sendTrafficData) {
-                // Handle async geolocation
-                GeolocationManager.getApproximateLocation()
-                    .then(location => {
-                        this.track('page_view:entry_point', {
-                            ...baseEventData,
-                            traffic_attribution: TrafficDataDetector.getTrafficData(),
-                            location: location
+                try {
+                    // Handle async geolocation
+                    GeolocationManager.getApproximateLocation()
+                        .then(location => {
+                            this.track('page_view:entry_point', {
+                                ...baseEventData,
+                                traffic_attribution: TrafficDataDetector.getTrafficData(),
+                                location: location
+                            });
+                        })
+                        .catch(error => {
+                            console.warn('Could not get location:', error.message);
+                            // Track without location
+                            this.track('page_view:entry_point', {
+                                ...baseEventData,
+                                traffic_attribution: TrafficDataDetector.getTrafficData()
+                            });
                         });
-                    })
-                    .catch(error => {
-                        console.warn('Could not get location:', error.message);
-                        // Track without location
-                        this.track('page_view:entry_point', {
-                            ...baseEventData,
-                            traffic_attribution: TrafficDataDetector.getTrafficData()
-                        });
+                } catch (error) {
+                    console.error('Error in geolocation call:', error);
+                    // Fallback sem geolocalização
+                    this.track('page_view:entry_point', {
+                        ...baseEventData,
+                        traffic_attribution: TrafficDataDetector.getTrafficData()
                     });
-            } else {
-                // No traffic data needed, track immediately
-                this.track('page_view', baseEventData);
+                }
             }
             
             // Configurar listeners universais
