@@ -953,6 +953,8 @@
         startTime: Date.now(),
         platform: 'generic',
         adapter: null,
+        locationContext: null,
+        locationPromise: null,
         
         // Inicializar tracker
         init: function(options = {}) {
@@ -1009,48 +1011,18 @@
         // Iniciar tracking
         startTracking: function() {
             this.initialized = true;
-            let sendTrafficData = false;
 
-            if (!sessionStorage.getItem("passedFirstPageView")) { 
-                sessionStorage.setItem("passedFirstPageView", "true");
-                sendTrafficData = true;
-            }
-            
-            // Base event data
-            const baseEventData = {
-                page_title: document.title,
-                referrer: document.referrer,
-                device_type: Utils.getDeviceType()
-            };
+            this.locationPromise = GeolocationManager.getApproximateLocation()
+                .then(location => {
+                    this.locationContext = location;
+                    console.log('📍 Location context available:', location.city);
 
-            if (sendTrafficData) {
-                try {
-                    // Handle async geolocation
-                    GeolocationManager.getApproximateLocation()
-                        .then(location => {
-                            this.track('page_view:entry_point', {
-                                ...baseEventData,
-                                traffic_attribution: TrafficDataDetector.getTrafficData(),
-                                location: location
-                            });
-                        })
-                        .catch(error => {
-                            console.warn('Could not get location:', error.message);
-                            // Track without location
-                            this.track('page_view:entry_point', {
-                                ...baseEventData,
-                                traffic_attribution: TrafficDataDetector.getTrafficData()
-                            });
-                        });
-                } catch (error) {
-                    console.error('Error in geolocation call:', error);
-                    // Fallback sem geolocalização
-                    this.track('page_view:entry_point', {
-                        ...baseEventData,
-                        traffic_attribution: TrafficDataDetector.getTrafficData()
-                    });
-                }
-            }
+                    return location;
+                })
+                .catch(error => {
+                    console.warn('Location context unavailable:', error.message);
+                    return null;
+                });
             
             // Configurar listeners universais
             this.setupUniversalTracking();
@@ -1070,6 +1042,29 @@
                 if (document.visibilityState === 'hidden') {
                     EventQueue.forceFlush();
                 }
+            });
+
+            // Base event data
+            const baseEventData = {
+                page_title: document.title,
+                referrer: document.referrer,
+                device_type: Utils.getDeviceType()
+            };
+            
+            let sendTrafficData = false;
+            if (!sessionStorage.getItem("passedFirstPageView")) { 
+                sessionStorage.setItem("passedFirstPageView", "true");
+                sendTrafficData = true;
+            }
+            
+            this.track('page_view:entry_point', {
+                ...baseEventData,
+                ...(sendTrafficData && {
+                    traffic_attribution: TrafficDataDetector.getTrafficData()
+                }),
+                ...(this.locationContext && {
+                    location: this.locationContext
+                })
             });
             
             console.log('🎯 Influencer Tracker: Inicializado com sucesso');
