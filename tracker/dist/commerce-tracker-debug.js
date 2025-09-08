@@ -943,7 +943,7 @@
     const TrafficDataDetector = window.CommerceTracker.TrafficDataDetector;
     const DeviceFingerprint = window.CommerceTracker.DeviceFingerprint;
     const EventQueue = window.CommerceTracker.EventQueue;
-    const GeolocationManager = window.CommerceTracker.GeolocationManager;
+    // const GeolocationManager = window.CommerceTracker.GeolocationManager;
     const Utils = window.CommerceTracker.Utils;
     
     // Tracker Principal
@@ -1012,17 +1012,17 @@
         startTracking: function() {
             this.initialized = true;
 
-            this.locationPromise = GeolocationManager.getApproximateLocation()
-                .then(location => {
-                    this.locationContext = location;
-                    console.log('📍 Location context available:', location.city);
+            // this.locationPromise = GeolocationManager.getApproximateLocation()
+            //     .then(location => {
+            //         this.locationContext = location;
+            //         console.log('📍 Location context available:', location.city);
 
-                    return location;
-                })
-                .catch(error => {
-                    console.warn('Location context unavailable:', error.message);
-                    return null;
-                });
+            //         return location;
+            //     })
+            //     .catch(error => {
+            //         console.warn('Location context unavailable:', error.message);
+            //         return null;
+            //     });
             
             // Configurar listeners universais
             this.setupUniversalTracking();
