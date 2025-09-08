@@ -34,14 +34,14 @@
   function setupShopifyEvents() {
     // === CUSTOMER EVENTS ===
     analytics.subscribe('customer_logged_in', (event) => {
-      window.CommerceTracker.Core.track('fp_customer_logged_in', {
+      window.CommerceTracker.Core.track('customer_logged_in', {
         customer_id: event.customerId,
         timestamp: event.timestamp
       });
     });
 
     analytics.subscribe('customer_logged_out', (event) => {
-      window.CommerceTracker.Core.track('fp_customer_logged_out', {
+      window.CommerceTracker.Core.track('customer_logged_out', {
         customer_id: event.customerId,
         timestamp: event.timestamp
       });
@@ -49,7 +49,7 @@
 
     // === PRODUCT EVENTS ===
     analytics.subscribe('product_viewed', (event) => {
-      window.CommerceTracker.Core.track('fp_product_view', {
+      window.CommerceTracker.Core.track('product_view', {
         product: window.CommerceTracker.ShopifyDataExtractors.extractProductData(event.data.productVariant.product),
         variant: window.CommerceTracker.ShopifyDataExtractors.extractVariantData(event.data.productVariant),
         timestamp: event.timestamp
@@ -57,7 +57,7 @@
     });
 
     analytics.subscribe('product_added_to_cart', (event) => {
-      window.CommerceTracker.Core.track('fp_add_to_cart', {
+      window.CommerceTracker.Core.track('add_to_cart', {
         product: window.CommerceTracker.ShopifyDataExtractors.extractProductData(event.data.cartLine.merchandise.product),
         variant: window.CommerceTracker.ShopifyDataExtractors.extractVariantData(event.data.cartLine.merchandise),
         quantity: event.data.cartLine.quantity,
@@ -68,7 +68,7 @@
     });
 
     analytics.subscribe('product_removed_from_cart', (event) => {
-      window.CommerceTracker.Core.track('fp_remove_from_cart', {
+      window.CommerceTracker.Core.track('remove_from_cart', {
         product: window.CommerceTracker.ShopifyDataExtractors.extractProductData(event.data.cartLine.merchandise.product),
         variant: window.CommerceTracker.ShopifyDataExtractors.extractVariantData(event.data.cartLine.merchandise),
         quantity: event.data.cartLine.quantity,
@@ -79,7 +79,7 @@
     });
     
     analytics.subscribe('product_variant_changed', (event) => {
-      window.CommerceTracker.Core.track('fp_variant_changed', {
+      window.CommerceTracker.Core.track('variant_changed', {
         from_variant: window.CommerceTracker.ShopifyDataExtractors.extractVariantData(event.data.previousProductVariant),
         to_variant: window.CommerceTracker.ShopifyDataExtractors.extractVariantData(event.data.productVariant),
         product: window.CommerceTracker.ShopifyDataExtractors.extractProductData(event.data.productVariant.product),
@@ -90,7 +90,7 @@
     // === CART EVENTS ===
     
     analytics.subscribe('cart_viewed', (event) => {
-      window.CommerceTracker.Core.track('fp_cart_view', {
+      window.CommerceTracker.Core.track('cart_view', {
         cart_token: event.data.cart.id,
         total_price: parseFloat(event.data.cart.cost.totalAmount.amount),
         currency: event.data.cart.cost.totalAmount.currencyCode,
@@ -101,7 +101,7 @@
     });
     
     analytics.subscribe('cart_updated', (event) => {
-      window.CommerceTracker.Core.track('fp_cart_updated', {
+      window.CommerceTracker.Core.track('cart_updated', {
         cart_token: event.data.cart.id,
         total_price: parseFloat(event.data.cart.cost.totalAmount.amount),
         currency: event.data.cart.cost.totalAmount.currencyCode,
@@ -114,7 +114,7 @@
     // === CHECKOUT EVENTS ===
     
     analytics.subscribe('checkout_started', (event) => {
-      window.CommerceTracker.Core.track('fp_checkout_started', {
+      window.CommerceTracker.Core.track('checkout_started', {
         checkout_token: event.data.checkout.token,
         order_id: event.data.checkout.order?.id,
         total_price: parseFloat(event.data.checkout.totalPrice.amount),
@@ -136,7 +136,7 @@
     });
     
     analytics.subscribe('checkout_completed', (event) => {
-      window.CommerceTracker.Core.track('fp_purchase', {
+      window.CommerceTracker.Core.track('purchase', {
         order_id: event.data.checkout.order?.id,
         checkout_token: event.data.checkout.token,
         total_price: parseFloat(event.data.checkout.totalPrice.amount),
@@ -164,7 +164,7 @@
     });
     
     analytics.subscribe('checkout_address_info_submitted', (event) => {
-      window.CommerceTracker.Core.track('fp_checkout_address_submitted', {
+      window.CommerceTracker.Core.track('checkout_address_submitted', {
         checkout_token: event.data.checkout.token,
         shipping_address: event.data.checkout.shippingAddress,
         billing_address: event.data.checkout.billingAddress,
@@ -173,7 +173,7 @@
     });
     
     analytics.subscribe('checkout_contact_info_submitted', (event) => {
-      window.CommerceTracker.Core.track('fp_checkout_contact_submitted', {
+      window.CommerceTracker.Core.track('checkout_contact_submitted', {
         checkout_token: event.data.checkout.token,
         email: event.data.checkout.email,
         phone: event.data.checkout.phone,
@@ -182,7 +182,7 @@
     });
     
     analytics.subscribe('checkout_shipping_info_submitted', (event) => {
-      window.CommerceTracker.Core.track('fp_checkout_shipping_submitted', {
+      window.CommerceTracker.Core.track('checkout_shipping_submitted', {
         checkout_token: event.data.checkout.token,
         shipping_rate: event.data.checkout.shippingLine,
         timestamp: event.timestamp
@@ -192,7 +192,7 @@
     // === PAYMENT EVENTS ===
     
     analytics.subscribe('payment_info_submitted', (event) => {
-      window.CommerceTracker.Core.track('fp_payment_info_submitted', {
+      window.CommerceTracker.Core.track('payment_info_submitted', {
         checkout_token: event.data.checkout.token,
         payment_method: event.data.checkout.transactions?.[0]?.gateway,
         total_price: parseFloat(event.data.checkout.totalPrice.amount),
@@ -204,7 +204,7 @@
     // === SEARCH EVENTS ===
     
     analytics.subscribe('search_submitted', (event) => {
-      window.CommerceTracker.Core.track('fp_search', {
+      window.CommerceTracker.Core.track('search', {
         search_query: event.data.searchResult.query,
         results_count: event.data.searchResult.productVariants?.length || 0,
         timestamp: event.timestamp
@@ -214,7 +214,7 @@
     // === COLLECTION EVENTS ===
     
     analytics.subscribe('collection_viewed', (event) => {
-      window.CommerceTracker.Core.track('fp_collection_view', {
+      window.CommerceTracker.Core.track('collection_view', {
         collection_id: event.data.collection.id,
         collection_title: event.data.collection.title,
         collection_handle: event.data.collection.handle,
@@ -226,7 +226,7 @@
     // === FORM EVENTS ===
     
     analytics.subscribe('form_submitted', (event) => {
-      window.CommerceTracker.Core.track('fp_form_submitted', {
+      window.CommerceTracker.Core.track('form_submitted', {
         form_id: event.data.form?.id,
         form_type: event.data.form?.type,
         timestamp: event.timestamp

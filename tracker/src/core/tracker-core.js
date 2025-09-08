@@ -11,6 +11,7 @@
     const TrafficDataDetector = window.CommerceTracker.TrafficDataDetector;
     const DeviceFingerprint = window.CommerceTracker.DeviceFingerprint;
     const EventQueue = window.CommerceTracker.EventQueue;
+    const GeolocationManager = window.CommerceTracker.GeolocationManager;
     const Utils = window.CommerceTracker.Utils;
     
     // Tracker Principal
@@ -83,14 +84,35 @@
                 sendTrafficData = true;
             }
             
-            this.track('page_view', {
+            // Base event data
+            const baseEventData = {
                 page_title: document.title,
                 referrer: document.referrer,
-                device_type: Utils.getDeviceType(),
-                ...(sendTrafficData && {
-                    traffic_attribution: TrafficDataDetector.getTrafficData()
-                })
-            });
+                device_type: Utils.getDeviceType()
+            };
+
+            if (sendTrafficData) {
+                // Handle async geolocation
+                GeolocationManager.getApproximateLocation()
+                    .then(location => {
+                        this.track('page_view:entry_point', {
+                            ...baseEventData,
+                            traffic_attribution: TrafficDataDetector.getTrafficData(),
+                            location: location
+                        });
+                    })
+                    .catch(error => {
+                        console.warn('Could not get location:', error.message);
+                        // Track without location
+                        this.track('page_view:entry_point', {
+                            ...baseEventData,
+                            traffic_attribution: TrafficDataDetector.getTrafficData()
+                        });
+                    });
+            } else {
+                // No traffic data needed, track immediately
+                this.track('page_view', baseEventData);
+            }
             
             // Configurar listeners universais
             this.setupUniversalTracking();

@@ -1,0 +1,136 @@
+<!-- ========== COMMERCE TRACKER SETUP ========== -->
+    
+    <!-- 1. CONFIGURAÇÃO INICIAL -->
+    <script>
+      // Configuração do tracker
+      window.CommerceTrackerConfig = {
+        apiEndpoint: 'https://rhino-bursting-cardinal.ngrok-free.app/api/tracking/events',
+        projectId: '{{ shop.domain | replace: ".myshopify.com", "" }}',
+        enableConsentCheck: true,
+        batchSize: 5,
+        batchTimeout: 3000,
+
+        // Configurações específicas do Shopify
+        shopifyTracking: true,
+        cartPollingInterval: 20000,
+      };
+      
+      // Dados do Shopify para o tracker
+      window.shopifyData = {
+        shop: {
+          domain: '{{ shop.domain }}',
+          name: '{{ shop.name }}',
+          currency: '{{ shop.currency }}',
+          money_format: '{{ shop.money_format }}',
+          country: '{{ shop.address.country }}'
+        },
+        {% if customer %}
+        customer: {
+          id: {{ customer.id }},
+          email: '{{ customer.email }}',
+          first_name: '{{ customer.first_name }}',
+          last_name: '{{ customer.last_name }}',
+          tags: '{{ customer.tags | join: "," }}',
+          orders_count: {{ customer.orders_count }},
+          total_spent: {{ customer.total_spent | money_without_currency | remove: ',' }}
+        },
+        {% else %}
+        customer: null,
+        {% endif %}
+        page: {
+          type: '{{ request.page_type }}',
+          handle: '{{ page_title | handleize }}',
+          title: '{{ page_title | escape }}',
+          url: '{{ canonical_url }}'
+        },
+        {% if template contains 'product' %}
+        product: {
+          id: {{ product.id }},
+          handle: '{{ product.handle }}',
+          title: '{{ product.title | escape }}',
+          type: '{{ product.type }}',
+          vendor: '{{ product.vendor }}',
+          price: {{ product.price | divided_by: 100.0 }},
+          compare_at_price: {{ product.compare_at_price | default: 0 | divided_by: 100.0 }},
+          available: {{ product.available }},
+          tags: {{ product.tags | json }},
+          variants: [
+            {% for variant in product.variants %}
+            {
+              id: {{ variant.id }},
+              title: '{{ variant.title | escape }}',
+              price: {{ variant.price | divided_by: 100.0 }},
+              available: {{ variant.available }},
+              sku: '{{ variant.sku }}'
+            }{% unless forloop.last %},{% endunless %}
+            {% endfor %}
+          ]
+        },
+        {% endif %}
+        {% if template contains 'collection' %}
+        collection: {
+          id: '{{ collection.id }}',
+          handle: '{{ collection.handle }}',
+          title: '{{ collection.title | escape }}',
+          products_count: {{ collection.products_count }}
+        },
+        {% endif %}
+        cart: {
+          item_count: {{ cart.item_count }},
+          total_price: {{ cart.total_price | divided_by: 100.0 }},
+          token: '{{ cart.token }}',
+          items: [
+            {% for item in cart.items %}
+            {
+              id: {{ item.id }},
+              product_id: {{ item.product_id }},
+              variant_id: {{ item.variant_id }},
+              quantity: {{ item.quantity }},
+              price: {{ item.price | divided_by: 100.0 }},
+              line_price: {{ item.line_price | divided_by: 100.0 }},
+              title: '{{ item.title | escape }}',
+              handle: '{{ item.handle }}'
+            }{% unless forloop.last %},{% endunless %}
+            {% endfor %}
+          ]
+        }
+      };
+    </script>
+    
+
+    
+    <!-- 3. TRACKER SCRIPT -->
+    <script src="https://eybymarketplace.github.io/tracker/dist/commerce-tracker.min.js" async></script>
+
+    <!-- 2. CONSENT MANAGEMENT (LGPD/GDPR) -->
+    <script>
+      if (window.CommerceTracker?.ConsentManager) {
+          window.CommerceTracker.ConsentManager.setConsent();
+      }
+    </script>
+    
+    
+    <!-- 4. INICIALIZAÇÃO E TRACKING CUSTOMIZADO -->
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        
+        // ========== INICIALIZAÇÃO ==========
+        function initCommerceTracker() {
+          if (window.CommerceTracker && window.shopifyData) {
+            console.log('🚀 Inicializando Commerce Tracker...');
+            
+            window.CommerceTracker.Core.init(window.CommerceTrackerConfig);
+            
+            console.log('✅ Commerce Tracker inicializado!');
+            
+          } else {
+            console.log('⏳ Aguardando tracker carregar...');
+            setTimeout(CommerceTracker, 500);
+          }
+        }
+
+        initCommerceTracker();
+      });
+    </script>
+    
+    <!-- ========== FIM COMMERCE TRACKER ========== -->

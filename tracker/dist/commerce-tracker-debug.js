@@ -1,7 +1,7 @@
 /*!
  * Commerce Tracker v2.1.0
  * Shopify Adapter - Complete Build
- * Built: 2025-09-05
+ * Built: 2025-09-08
  * 
  * This file contains all modules required for Shopify integration
  * including tracking, analytics, and AI data collection.
@@ -455,7 +455,6 @@
             return {
                 affiliate_id: urlParams.get('aff') || urlParams.get('affiliate') || urlParams.get('ref'),
                 referral_code: urlParams.get('referral') || urlParams.get('promo'),
-                partner_id: urlParams.get('partner') || urlParams.get('pid'),
                 influencer_code: urlParams.get('influencer') || urlParams.get('inf'),
                 discount_code: urlParams.get('discount') || urlParams.get('coupon')
             };
@@ -533,29 +532,6 @@
             }
         },
 
-        // Detecta informações de campanha do Facebook
-        getFacebookCampaignInfo: () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            return {
-                fbclid: urlParams.get('fbclid'),
-                fb_action_ids: urlParams.get('fb_action_ids'),
-                fb_action_types: urlParams.get('fb_action_types'),
-                fb_source: urlParams.get('fb_source')
-            };
-        },
-
-        // Detecta informações de campanha do Google
-        getGoogleCampaignInfo: () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            return {
-                gclid: urlParams.get('gclid'),
-                gclsrc: urlParams.get('gclsrc'),
-                dclid: urlParams.get('dclid'),
-                wbraid: urlParams.get('wbraid'),
-                gbraid: urlParams.get('gbraid')
-            };
-        },
-
         // Função principal que coleta todas as informações
         getTrafficData() {
 
@@ -566,8 +542,6 @@
             const utmParams = this.getUtmParams();
             const affiliateInfo = this.getAffiliateInfo();
             const trafficSource = this.getTrafficSource();
-            const facebookInfo = this.getFacebookCampaignInfo();
-            const googleInfo = this.getGoogleCampaignInfo();
 
             let trafficData = {
                 // Informações de UTM
@@ -579,12 +553,7 @@
                 // Fonte de tráfego
                 traffic_source: trafficSource,
 
-                // Informações específicas de plataformas
-                facebook_data: facebookInfo,
-                google_data: googleInfo,
-
                 // Informações adicionais
-                landing_page: window.location.pathname,
                 full_url: window.location.href,
                 user_agent: navigator.userAgent,
                 timestamp: Date.now()
@@ -842,6 +811,52 @@
     
 })(window);
 
+
+/* === src/core/modules/geolocation-manager.js === */
+/*!
+ * Influencer Tracker - Geolocation Module
+ */
+(function(window) {
+    'use strict';
+
+    window.CommerceTracker = window.CommerceTracker || {};
+
+    window.CommerceTracker.GeolocationManager = {
+        // Get approximate location without consent popup
+        getApproximateLocation: function() {
+            return new Promise((resolve, reject) => {
+                // Check if user has previously opted out
+                const optOut = localStorage.getItem('location_opt_out');
+                if (optOut) {
+                    reject(new Error('User has opted out of location tracking'));
+                    return;
+                }
+
+                fetch('https://ipapi.co/json/')
+                    .then(response => response.json())
+                    .then(data => {
+                        const location = {
+                            country: data.country_name,
+                            country_code: data.country_code,
+                            region: data.region,
+                            city: data.city,
+                            latitude: data.latitude,
+                            longitude: data.longitude,
+                            timezone: data.timezone,
+                            type: 'approximate',
+                            timestamp: Date.now()
+                        };
+                        resolve(location);
+                    })
+                    .catch(reject);
+            });
+        }
+    };
+
+    console.log('📍 Geolocation module loaded');
+    
+})(window);
+
 (function() {
 
 /* === src/core/modules/shopify-data-extractors.js === */
@@ -930,6 +945,7 @@
     const TrafficDataDetector = window.CommerceTracker.TrafficDataDetector;
     const DeviceFingerprint = window.CommerceTracker.DeviceFingerprint;
     const EventQueue = window.CommerceTracker.EventQueue;
+    const GeolocationManager = window.CommerceTracker.GeolocationManager;
     const Utils = window.CommerceTracker.Utils;
     
     // Tracker Principal
@@ -1002,14 +1018,35 @@
                 sendTrafficData = true;
             }
             
-            this.track('page_view', {
+            // Base event data
+            const baseEventData = {
                 page_title: document.title,
                 referrer: document.referrer,
-                device_type: Utils.getDeviceType(),
-                ...(sendTrafficData && {
-                    traffic_attribution: TrafficDataDetector.getTrafficData()
-                })
-            });
+                device_type: Utils.getDeviceType()
+            };
+
+            if (sendTrafficData) {
+                // Handle async geolocation
+                GeolocationManager.getApproximateLocation()
+                    .then(location => {
+                        this.track('page_view:entry_point', {
+                            ...baseEventData,
+                            traffic_attribution: TrafficDataDetector.getTrafficData(),
+                            location: location
+                        });
+                    })
+                    .catch(error => {
+                        console.warn('Could not get location:', error.message);
+                        // Track without location
+                        this.track('page_view:entry_point', {
+                            ...baseEventData,
+                            traffic_attribution: TrafficDataDetector.getTrafficData()
+                        });
+                    });
+            } else {
+                // No traffic data needed, track immediately
+                this.track('page_view', baseEventData);
+            }
             
             // Configurar listeners universais
             this.setupUniversalTracking();

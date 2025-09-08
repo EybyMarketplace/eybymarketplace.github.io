@@ -64,7 +64,6 @@
             return {
                 affiliate_id: urlParams.get('aff') || urlParams.get('affiliate') || urlParams.get('ref'),
                 referral_code: urlParams.get('referral') || urlParams.get('promo'),
-                partner_id: urlParams.get('partner') || urlParams.get('pid'),
                 influencer_code: urlParams.get('influencer') || urlParams.get('inf'),
                 discount_code: urlParams.get('discount') || urlParams.get('coupon')
             };
@@ -142,29 +141,6 @@
             }
         },
 
-        // Detecta informações de campanha do Facebook
-        getFacebookCampaignInfo: () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            return {
-                fbclid: urlParams.get('fbclid'),
-                fb_action_ids: urlParams.get('fb_action_ids'),
-                fb_action_types: urlParams.get('fb_action_types'),
-                fb_source: urlParams.get('fb_source')
-            };
-        },
-
-        // Detecta informações de campanha do Google
-        getGoogleCampaignInfo: () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            return {
-                gclid: urlParams.get('gclid'),
-                gclsrc: urlParams.get('gclsrc'),
-                dclid: urlParams.get('dclid'),
-                wbraid: urlParams.get('wbraid'),
-                gbraid: urlParams.get('gbraid')
-            };
-        },
-
         // Função principal que coleta todas as informações
         getTrafficData() {
 
@@ -175,8 +151,6 @@
             const utmParams = this.getUtmParams();
             const affiliateInfo = this.getAffiliateInfo();
             const trafficSource = this.getTrafficSource();
-            const facebookInfo = this.getFacebookCampaignInfo();
-            const googleInfo = this.getGoogleCampaignInfo();
 
             let trafficData = {
                 // Informações de UTM
@@ -188,12 +162,7 @@
                 // Fonte de tráfego
                 traffic_source: trafficSource,
 
-                // Informações específicas de plataformas
-                facebook_data: facebookInfo,
-                google_data: googleInfo,
-
                 // Informações adicionais
-                landing_page: window.location.pathname,
                 full_url: window.location.href,
                 user_agent: navigator.userAgent,
                 timestamp: Date.now()

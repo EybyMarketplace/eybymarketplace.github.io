@@ -33,6 +33,7 @@ class ShopifyAdapterBuilder {
             'src/core/modules/traffic-data-detector.js',
             'src/core/modules/device-fingerprint.js',
             'src/core/modules/event-queue.js',
+            'src/core/modules/geolocation-manager.js',
             'src/core/modules/shopify-data-extractors.js',
 
             // Tracker core
