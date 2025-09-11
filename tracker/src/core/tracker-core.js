@@ -117,7 +117,6 @@
                 page_title: document.title,
                 referrer: document.referrer,
                 device_type: Utils.getDeviceType(),
-                domain: window.location.hostname
             };
             
             let sendTrafficData = false;
@@ -155,6 +154,7 @@
                 page_url: Utils.getCleanPageUrl(),
                 device_fingerprint: DeviceFingerprint.generate(),
                 platform: this.platform,
+                domain: window.location.hostname,
                 properties: Utils.deepMerge({}, properties)
             };
 
