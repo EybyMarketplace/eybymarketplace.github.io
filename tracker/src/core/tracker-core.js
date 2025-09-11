@@ -116,7 +116,8 @@
             const baseEventData = {
                 page_title: document.title,
                 referrer: document.referrer,
-                device_type: Utils.getDeviceType()
+                device_type: Utils.getDeviceType(),
+                domain: window.location.hostname
             };
             
             let sendTrafficData = false;
