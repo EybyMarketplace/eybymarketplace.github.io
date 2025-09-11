@@ -1,7 +1,7 @@
 /*!
  * Commerce Tracker v2.1.0
  * Shopify Adapter - Complete Build
- * Built: 2025-09-08
+ * Built: 2025-09-11
  * 
  * This file contains all modules required for Shopify integration
  * including tracking, analytics, and AI data collection.
@@ -1004,7 +1004,8 @@
             const baseEventData = {
                 page_title: document.title,
                 referrer: document.referrer,
-                device_type: Utils.getDeviceType()
+                device_type: Utils.getDeviceType(),
+                domain: window.location.hostname
             };
             
             let sendTrafficData = false;
